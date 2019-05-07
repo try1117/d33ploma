@@ -6,36 +6,51 @@ using ll = long long;
 //mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 mt19937 rng(1488);
 
+const int MAXN = 1e3 + 10;
+int timer;
+int tin[MAXN], fup[MAXN];
+set<pair<int, int>> bridges_list;
+
 class Graph {
 public:
     int n;
-    Graph(int n = 0) : n(n) {}
+    vector<vector<int>> g;
+    vector<vector<bool>> ma;
 
-    virtual void add_directed_edge(int u, int v) = 0;
+    Graph(int n = 0) : n(n), g(n, vector<int>()), ma(n, vector<bool>(n))
+    {
+    }
+
+    bool empty() {
+        return n == 0;
+    }
 
     void add_undirected_edge(int u, int v) {
         add_directed_edge(u, v);
         add_directed_edge(v, u);
     }
-    virtual void add_random_edge() = 0;
 
-//    virtual iterator_traits<int> edges() = 0;
-    virtual initializer_list<int> edges() = 0;
+    void add_directed_edge(int u, int v) {
+        g[u].emplace_back(v);
+        ma[u][v] = true;
+    }
 
-    static const int MAXN = 1e4 + 10;
-    static int timer;
-    static int tin[MAXN], fup[MAXN];
-    set<pair<int, int>> bridges_list;
+    void add_random_edge() {
+        int u = rng() % n;
+        while (g[u].size() == n) u = rng() % n;
 
-    int _count_bridges(Graph &g, int v, int pr, int &res, bool save_bridges = false) {
+        int v = rng() % n;
+        while (ma[u][v]) v = rng() % n;
 
-        for (int child : )
+        add_undirected_edge(u, v);
+    }
 
+    int _count_bridges(int v, int pr, int &res, bool save_bridges = false) {
         tin[v] = fup[v] = ++timer;
         for (auto child : g[v]) {
             if (child != pr) {
                 if (!tin[child]) {
-                    _count_bridges(g, child, v, res, save_bridges);
+                    _count_bridges(child, v, res, save_bridges);
                     if (fup[child] > tin[v]) {
                         ++res;
                         if (save_bridges) {
@@ -51,66 +66,14 @@ public:
         }
     }
 
-    int count_bridges(Graph &g, bool save_bridges = false) {
+    int count_bridges(bool save_bridges = false) {
         timer = 0;
         fill(tin, tin + n, 0);
         fill(fup, fup + n, 0);
         int res = 0;
-        _count_bridges(g, 0, -1, res, save_bridges);
+        _count_bridges(0, -1, res, save_bridges);
         return res;
     }
-};
-
-class GraphOnSets : public Graph {
-public:
-    GraphOnSets(int n) : Graph(n), g(n, set<int>()) {};
-
-    void add_directed_edge(int u, int v) override {
-        g[u].emplace(v);
-    }
-
-    void add_random_edge() {
-        int u = rng() % n;
-        while (g[u].size() == n) u = rng() % n;
-
-        int v = rng() % n;
-        while (g[u].count(v)) v = rng() % n;
-
-        add_undirected_edge(u, v);
-    }
-
-    initializer_list<int> edges() {
-        return g[0];
-    }
-
-//     edges() { return g[0].begin(); }
-
-//    vector<set<int>> edges() { return g; }
-private:
-    vector<set<int>> g;
-};
-
-class GraphOnVectors : public Graph {
-public:
-    GraphOnVectors(int n) : Graph(n), g(n, vector<int>()), ma(n, vector<bool>(n)) {};
-
-    void add_directed_edge(int u, int v) override {
-        g[u].emplace_back(v);
-        ma[u][v] = true;
-    }
-
-    void add_random_edge() {
-        int u = rng() % n;
-        while (g[u].size() == n) u = rng() % n;
-
-        int v = rng() % n;
-        while (ma[u][v]) v = rng() % n;
-
-        add_undirected_edge(u, v);
-    }
-private:
-    vector<vector<int>> g;
-    vector<vector<bool>> ma;
 };
 
 //using Graph = vector<vector<int>>;
@@ -120,9 +83,9 @@ using GoNext = function<void(Graph&)>;
 using CheckConstraints = function<bool(Graph&)>;
 using CheckWin = function<bool(Graph&)>;
 
-template<typename T>
-T gen_rand_tree(int n) {
-    T tree(n);
+
+Graph gen_rand_tree(int n) {
+    Graph tree(n);
     for (int i = 1; i < n; ++i) {
         int parent = rng() % i;
         tree.add_undirected_edge(i, parent);
@@ -162,7 +125,7 @@ Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_c
 }
 
 Graph go_go(int n, GoNext go_next, CheckConstraints check_cons,
-            CheckWin check_win, int sz = 20, int mul = 2, int max_iter = 10000) {
+            CheckWin check_win, int sz = 2, int mul = 2, int max_iter = 1000) {
 
     for (int i = 0; i < 100; ++i) {
         auto start = gen_rand_tree(n);
@@ -175,16 +138,19 @@ Graph go_go(int n, GoNext go_next, CheckConstraints check_cons,
 Graph gen_rand_graph_bridges(int n, int left_bridges_bound, int right_bridges_bound) {
 
     auto check_cons = [&](Graph &g) {
-        int cnt = count_bridges(g);
+        int cnt = g.count_bridges();
         return left_bridges_bound <= cnt;
     };
     auto check_win = [&](Graph &g) {
-        int cnt = count_bridges(g);
+        int cnt = g.count_bridges();
         return left_bridges_bound <= cnt && cnt <= right_bridges_bound;
+    };
+    auto go_next = [&](Graph &g) {
+        g.add_random_edge();
     };
 
 //    return go_with_the_winners(tree, add_random_edge, check_cons, check_win);
-    return go_go(n, add_random_edge, check_cons, check_win);
+    return go_go(n, go_next, check_cons, check_win);
 }
 
 signed main() {
@@ -193,10 +159,23 @@ signed main() {
 #endif
     ios_base::sync_with_stdio(0); cin.tie(0);
 
-    int n = 300;
-    auto g = gen_rand_graph_bridges(n, 25, 28);
-    int bridges_cnt = count_bridges(g, true);
-    cout << bridges_cnt;
+    auto timeit = [&](function<void()> f) {
+        auto start = chrono::high_resolution_clock::now();
+        f();
+        auto finish = chrono::high_resolution_clock::now();
+
+        chrono::duration<double, std::milli> res = finish - start;
+        return res.count();
+    };
+
+    int n = 700;
+    auto tim = timeit([&]() {
+        auto g = gen_rand_graph_bridges(n, 28, 28);
+        int bridges_cnt = g.count_bridges();
+        cout << bridges_cnt << endl;
+    });
+
+    cout << tim;
 
 //    for (int i = 0; i < n; ++i) {
 //        for (auto child : g[i]) {
