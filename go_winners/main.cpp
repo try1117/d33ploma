@@ -2,76 +2,132 @@
 //#include <boost/graph/graphml.hpp>
 using namespace std;
 using ll = long long;
+
+//mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+mt19937 rng(1488);
+
+class Graph {
+public:
+    int n;
+    Graph(int n = 0) : n(n) {}
+
+    virtual void add_directed_edge(int u, int v) = 0;
+
+    void add_undirected_edge(int u, int v) {
+        add_directed_edge(u, v);
+        add_directed_edge(v, u);
+    }
+    virtual void add_random_edge() = 0;
+
+//    virtual iterator_traits<int> edges() = 0;
+    virtual initializer_list<int> edges() = 0;
+
+    static const int MAXN = 1e4 + 10;
+    static int timer;
+    static int tin[MAXN], fup[MAXN];
+    set<pair<int, int>> bridges_list;
+
+    int _count_bridges(Graph &g, int v, int pr, int &res, bool save_bridges = false) {
+
+        for (int child : )
+
+        tin[v] = fup[v] = ++timer;
+        for (auto child : g[v]) {
+            if (child != pr) {
+                if (!tin[child]) {
+                    _count_bridges(g, child, v, res, save_bridges);
+                    if (fup[child] > tin[v]) {
+                        ++res;
+                        if (save_bridges) {
+                            bridges_list.emplace(min(v, child), max(v, child));
+                        }
+                    }
+                    fup[v] = min(fup[v], fup[child]);
+                }
+                else {
+                    fup[v] = min(fup[v], tin[child]);
+                }
+            }
+        }
+    }
+
+    int count_bridges(Graph &g, bool save_bridges = false) {
+        timer = 0;
+        fill(tin, tin + n, 0);
+        fill(fup, fup + n, 0);
+        int res = 0;
+        _count_bridges(g, 0, -1, res, save_bridges);
+        return res;
+    }
+};
+
+class GraphOnSets : public Graph {
+public:
+    GraphOnSets(int n) : Graph(n), g(n, set<int>()) {};
+
+    void add_directed_edge(int u, int v) override {
+        g[u].emplace(v);
+    }
+
+    void add_random_edge() {
+        int u = rng() % n;
+        while (g[u].size() == n) u = rng() % n;
+
+        int v = rng() % n;
+        while (g[u].count(v)) v = rng() % n;
+
+        add_undirected_edge(u, v);
+    }
+
+    initializer_list<int> edges() {
+        return g[0];
+    }
+
+//     edges() { return g[0].begin(); }
+
+//    vector<set<int>> edges() { return g; }
+private:
+    vector<set<int>> g;
+};
+
+class GraphOnVectors : public Graph {
+public:
+    GraphOnVectors(int n) : Graph(n), g(n, vector<int>()), ma(n, vector<bool>(n)) {};
+
+    void add_directed_edge(int u, int v) override {
+        g[u].emplace_back(v);
+        ma[u][v] = true;
+    }
+
+    void add_random_edge() {
+        int u = rng() % n;
+        while (g[u].size() == n) u = rng() % n;
+
+        int v = rng() % n;
+        while (ma[u][v]) v = rng() % n;
+
+        add_undirected_edge(u, v);
+    }
+private:
+    vector<vector<int>> g;
+    vector<vector<bool>> ma;
+};
+
 //using Graph = vector<vector<int>>;
-using Graph = vector<set<int>>;
+//using Graph = vector<set<int>>;
+
 using GoNext = function<void(Graph&)>;
 using CheckConstraints = function<bool(Graph&)>;
 using CheckWin = function<bool(Graph&)>;
 
-mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-//mt19937 rng(1488);
-
-const int MAXN = 5e2 + 10;
-const ll MOD = 1e6 + 3;
-const ll INF = 1e18 + 10;
-const double PI = acos(-1.0);
-const double EPS = 1e-12;
-
-Graph gen_rand_tree(int n) {
-    Graph tree(n, set<int>());
+template<typename T>
+T gen_rand_tree(int n) {
+    T tree(n);
     for (int i = 1; i < n; ++i) {
         int parent = rng() % i;
-        tree[parent].emplace(i);
-        tree[i].emplace(parent);
+        tree.add_undirected_edge(i, parent);
     }
     return tree;
-}
-
-void add_random_edge(Graph &g) {
-    int n = g.size();
-    int u = rng() % n;
-    while (g[u].size() == n) u = rng() % n;
-
-    int v = rng() % n;
-    while (g[u].count(v)) v = rng() % n;
-
-    g[u].emplace(v);
-    g[v].emplace(u);
-}
-
-int timer;
-int tin[MAXN], fup[MAXN];
-set<pair<int, int>> bridges_list;
-
-int _count_bridges(Graph &g, int v, int pr, int &res, bool save_bridges = false) {
-    tin[v] = fup[v] = ++timer;
-    for (auto child : g[v]) {
-        if (child != pr) {
-            if (!tin[child]) {
-                _count_bridges(g, child, v, res, save_bridges);
-                if (fup[child] > tin[v]) {
-                    ++res;
-                    if (save_bridges) {
-                        bridges_list.emplace(min(v, child), max(v, child));
-                    }
-                }
-                fup[v] = min(fup[v], fup[child]);
-            }
-            else {
-                fup[v] = min(fup[v], tin[child]);
-            }
-        }
-    }
-}
-
-int count_bridges(Graph &g, bool save_bridges = false) {
-    timer = 0;
-    int n = g.size();
-    fill(tin, tin + n, 0);
-    fill(fup, fup + n, 0);
-    int res = 0;
-    _count_bridges(g, 0, -1, res, save_bridges);
-    return res;
 }
 
 Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_cons,
