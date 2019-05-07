@@ -1,0 +1,152 @@
+#include <bits/stdc++.h>
+//#include <boost/graph/graphml.hpp>
+using namespace std;
+using ll = long long;
+//using Graph = vector<vector<int>>;
+using Graph = vector<set<int>>;
+using GoNext = function<void(Graph&)>;
+using CheckConstraints = function<bool(Graph&)>;
+using CheckWin = function<bool(Graph&)>;
+
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+//mt19937 rng(1488);
+
+const int MAXN = 5e2 + 10;
+const ll MOD = 1e6 + 3;
+const ll INF = 1e18 + 10;
+const double PI = acos(-1.0);
+const double EPS = 1e-12;
+
+Graph gen_rand_tree(int n) {
+    Graph tree(n, set<int>());
+    for (int i = 1; i < n; ++i) {
+        int parent = rng() % i;
+        tree[parent].emplace(i);
+        tree[i].emplace(parent);
+    }
+    return tree;
+}
+
+void add_random_edge(Graph &g) {
+    int n = g.size();
+    int u = rng() % n;
+    while (g[u].size() == n) u = rng() % n;
+
+    int v = rng() % n;
+    while (g[u].count(v)) v = rng() % n;
+
+    g[u].emplace(v);
+    g[v].emplace(u);
+}
+
+int timer;
+int tin[MAXN], fup[MAXN];
+set<pair<int, int>> bridges_list;
+
+int _count_bridges(Graph &g, int v, int pr, int &res, bool save_bridges = false) {
+    tin[v] = fup[v] = ++timer;
+    for (auto child : g[v]) {
+        if (child != pr) {
+            if (!tin[child]) {
+                _count_bridges(g, child, v, res, save_bridges);
+                if (fup[child] > tin[v]) {
+                    ++res;
+                    if (save_bridges) {
+                        bridges_list.emplace(min(v, child), max(v, child));
+                    }
+                }
+                fup[v] = min(fup[v], fup[child]);
+            }
+            else {
+                fup[v] = min(fup[v], tin[child]);
+            }
+        }
+    }
+}
+
+int count_bridges(Graph &g, bool save_bridges = false) {
+    timer = 0;
+    int n = g.size();
+    fill(tin, tin + n, 0);
+    fill(fup, fup + n, 0);
+    int res = 0;
+    _count_bridges(g, 0, -1, res, save_bridges);
+    return res;
+}
+
+Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_cons,
+                          CheckWin check_win, int sz = 20, int mul = 2, int max_iter = 10000) {
+
+    vector<Graph> graphs(sz, start);
+    int threshold = sz / mul;
+    for (int iter = 0; iter < max_iter && !graphs.empty(); ++iter) {
+        vector<Graph> graphs_nxt;
+        for (auto &g : graphs) {
+            go_next(g);
+            if (check_cons(g)) {
+                if (check_win(g)) return g;
+                graphs_nxt.push_back(g);
+            }
+        }
+
+        graphs.clear();
+        if (graphs_nxt.size() <= threshold) {
+            for (auto &g: graphs_nxt) {
+                for (int i = 0; i < mul; ++i) {
+                    graphs.push_back(g);
+                }
+            }
+        }
+        else {
+            graphs = graphs_nxt;
+        }
+    }
+
+    return Graph();
+}
+
+Graph go_go(int n, GoNext go_next, CheckConstraints check_cons,
+            CheckWin check_win, int sz = 20, int mul = 2, int max_iter = 10000) {
+
+    for (int i = 0; i < 100; ++i) {
+        auto start = gen_rand_tree(n);
+        auto res = go_with_the_winners(start, go_next, check_cons, check_win, sz, mul, max_iter);
+        if (!res.empty()) return res;
+    }
+    return Graph();
+}
+
+Graph gen_rand_graph_bridges(int n, int left_bridges_bound, int right_bridges_bound) {
+
+    auto check_cons = [&](Graph &g) {
+        int cnt = count_bridges(g);
+        return left_bridges_bound <= cnt;
+    };
+    auto check_win = [&](Graph &g) {
+        int cnt = count_bridges(g);
+        return left_bridges_bound <= cnt && cnt <= right_bridges_bound;
+    };
+
+//    return go_with_the_winners(tree, add_random_edge, check_cons, check_win);
+    return go_go(n, add_random_edge, check_cons, check_win);
+}
+
+signed main() {
+#ifndef ONLINE_JUDGE
+    freopen("input.txt", "r", stdin);
+#endif
+    ios_base::sync_with_stdio(0); cin.tie(0);
+
+    int n = 300;
+    auto g = gen_rand_graph_bridges(n, 25, 28);
+    int bridges_cnt = count_bridges(g, true);
+    cout << bridges_cnt;
+
+//    for (int i = 0; i < n; ++i) {
+//        for (auto child : g[i]) {
+//            if (i <= child) {
+//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, (bridges_list.count({i, child}) ? "red" : "blue"));
+//            }
+//        }
+//    }
+}
