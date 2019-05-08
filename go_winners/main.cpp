@@ -51,14 +51,21 @@ public:
         add_undirected_edge(u, v);
     }
 
-    int _count_bridges(int v, int pr, int &res, bool save_bridges = false) {
+    bool is_leaf(int v) {
+        return g[v].size() == 1;
+    }
+
+    int _count_bridges(int v, int pr, pair<int, int> &res, bool save_bridges = false) {
         tin[v] = fup[v] = ++timer;
         for (auto child : g[v]) {
             if (child != pr) {
                 if (!tin[child]) {
                     _count_bridges(child, v, res, save_bridges);
                     if (fup[child] > tin[v]) {
-                        ++res;
+                        ++res.first;
+                        if (!is_leaf(v) && !is_leaf(child)) {
+                            ++res.second;
+                        }
                         if (save_bridges) {
                             bridges_list.emplace(min(v, child), max(v, child));
                         }
@@ -72,11 +79,11 @@ public:
         }
     }
 
-    int count_bridges(bool save_bridges = false) {
+    pair<int, int> count_bridges(bool save_bridges = false) {
         timer = 0;
         fill(tin, tin + n, 0);
         fill(fup, fup + n, 0);
-        int res = 0;
+        pair<int, int> res;
         _count_bridges(0, -1, res, save_bridges);
         return res;
     }
@@ -106,7 +113,11 @@ int sub_colony_multiplications;
 GraphPtr go_with_the_winners(GraphPtr start, GoNext go_next, CheckConstraints check_cons,
                           CheckWin check_win, int sz = 20, int mul = 2, int max_iter = 10000) {
 
-    vector<GraphPtr> graphs(sz, make_shared<Graph>(*start));
+    vector<GraphPtr> graphs;
+    for (int i = 0; i < sz; ++i) {
+        graphs.push_back(make_shared<Graph>(*start));
+    }
+
     int threshold = sz / mul;
     for (int iter = 0; iter < max_iter && !graphs.empty(); ++iter) {
         ++sub_iterations;
@@ -137,7 +148,7 @@ GraphPtr go_with_the_winners(GraphPtr start, GoNext go_next, CheckConstraints ch
 }
 
 GraphPtr go_go(int n, GoNext go_next, CheckConstraints check_cons,
-            CheckWin check_win, int sz = 10, int mul = 2, int max_iter = 10000) {
+            CheckWin check_win, int sz = 2, int mul = 2, int max_iter = 10000) {
 
     for (int i = 0; i < 100; ++i) {
         auto start = gen_rand_tree(n);
@@ -145,9 +156,10 @@ GraphPtr go_go(int n, GoNext go_next, CheckConstraints check_cons,
         if (!res->empty()) {
             cout << "Main        : " << i + 1 << endl;
             cout << "Sub avg     : " << fixed << 1.0 * sub_iterations / (i + 1) << endl;
-            cout << "Edgepick avg: " << fixed << 1.0 * edge_pick_iterations / sub_iterations << endl;
+//            cout << "Edgepick avg: " << fixed << 1.0 * edge_pick_iterations / sub_iterations << endl;
             cout << "Edgepick tot: " << edge_pick_iterations << endl;
-            cout << "Colony mul: " << sub_colony_multiplications << endl;
+            cout << "Colony size : " << sz << endl;
+            cout << "Colony mul  : " << sub_colony_multiplications << endl;
             return res;
         }
     }
@@ -157,12 +169,12 @@ GraphPtr go_go(int n, GoNext go_next, CheckConstraints check_cons,
 GraphPtr gen_rand_graph_bridges(int n, int left_bridges_bound, int right_bridges_bound) {
 
     auto check_cons = [&](GraphPtr g) {
-        int cnt = g->count_bridges();
-        return left_bridges_bound <= cnt;
+        auto cnt = g->count_bridges();
+        return left_bridges_bound <= cnt.first;
     };
     auto check_win = [&](GraphPtr g) {
-        int cnt = g->count_bridges();
-        return left_bridges_bound <= cnt && cnt <= right_bridges_bound;
+        auto cnt = g->count_bridges();
+        return left_bridges_bound <= cnt.first && cnt.first <= right_bridges_bound;
     };
     auto go_next = [&](GraphPtr g) {
         g->add_random_edge();
@@ -183,25 +195,31 @@ signed main() {
         f();
         auto finish = chrono::high_resolution_clock::now();
 
-        chrono::duration<double, std::milli> res = finish - start;
+        chrono::duration<double> res = finish - start;
         return res.count();
     };
 
-    int n = 2000;
+    int n = 1000;
     GraphPtr g;
+    pair<int, int> bridges_cnt;
+
     auto tim = timeit([&]() {
-        g = gen_rand_graph_bridges(n, 3, 5);
-        int bridges_cnt = g->count_bridges();
-        cout << bridges_cnt << endl;
+        g = gen_rand_graph_bridges(n, 300, 400);
+        bridges_cnt = g->count_bridges();
     });
 
-    cout << tim;
-
-//    for (int i = 0; i < n; ++i) {
-//        for (auto child : g->g[i]) {
-//            if (i <= child) {
+    int edges = 0;
+    for (int i = 0; i < n; ++i) {
+        for (auto child : g->g[i]) {
+            if (i <= child) {
+                ++edges;
 //                printf("g.add_edge(%d, %d, color='%s')\n", i, child, (bridges_list.count({i, child}) ? "red" : "blue"));
-//            }
-//        }
-//    }
+            }
+        }
+    }
+
+    cout << "Bridg, nonlv: " << bridges_cnt.first << ", " << bridges_cnt.second << endl;
+    cout << "Edges       : " << edges << endl;
+    cout << endl;
+    cout << "Time        : " << tim << endl;
 }
