@@ -3,13 +3,15 @@
 using namespace std;
 using ll = long long;
 
-//mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-mt19937 rng(1488);
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+//mt19937 rng(1488);
 
-const int MAXN = 1e3 + 10;
+const int MAXN = 1e4 + 10;
 int timer;
 int tin[MAXN], fup[MAXN];
 set<pair<int, int>> bridges_list;
+
+int edge_pick_iterations;
 
 class Graph {
 public:
@@ -20,6 +22,10 @@ public:
     Graph(int n = 0) : n(n), g(n, vector<int>()), ma(n, vector<bool>(n))
     {
     }
+//
+//    Graph(const Graph &arg) {
+//
+//    }
 
     bool empty() {
         return n == 0;
@@ -37,10 +43,10 @@ public:
 
     void add_random_edge() {
         int u = rng() % n;
-        while (g[u].size() == n) u = rng() % n;
+        while (g[u].size() == n) u = rng() % n, ++edge_pick_iterations;
 
         int v = rng() % n;
-        while (ma[u][v]) v = rng() % n;
+        while (ma[u][v]) v = rng() % n, ++edge_pick_iterations;
 
         add_undirected_edge(u, v);
     }
@@ -76,30 +82,35 @@ public:
     }
 };
 
+using GraphPtr = shared_ptr<Graph>;
+
 //using Graph = vector<vector<int>>;
 //using Graph = vector<set<int>>;
 
-using GoNext = function<void(Graph&)>;
-using CheckConstraints = function<bool(Graph&)>;
-using CheckWin = function<bool(Graph&)>;
+using GoNext = function<void(GraphPtr)>;
+using CheckConstraints = function<bool(GraphPtr)>;
+using CheckWin = function<bool(GraphPtr)>;
 
-
-Graph gen_rand_tree(int n) {
-    Graph tree(n);
+GraphPtr gen_rand_tree(int n) {
+    GraphPtr tree(new Graph(n));
     for (int i = 1; i < n; ++i) {
         int parent = rng() % i;
-        tree.add_undirected_edge(i, parent);
+        tree->add_undirected_edge(i, parent);
     }
     return tree;
 }
 
-Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_cons,
+int sub_iterations;
+int sub_colony_multiplications;
+
+GraphPtr go_with_the_winners(GraphPtr start, GoNext go_next, CheckConstraints check_cons,
                           CheckWin check_win, int sz = 20, int mul = 2, int max_iter = 10000) {
 
-    vector<Graph> graphs(sz, start);
+    vector<GraphPtr> graphs(sz, make_shared<Graph>(*start));
     int threshold = sz / mul;
     for (int iter = 0; iter < max_iter && !graphs.empty(); ++iter) {
-        vector<Graph> graphs_nxt;
+        ++sub_iterations;
+        vector<GraphPtr> graphs_nxt;
         for (auto &g : graphs) {
             go_next(g);
             if (check_cons(g)) {
@@ -110,6 +121,7 @@ Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_c
 
         graphs.clear();
         if (graphs_nxt.size() <= threshold) {
+            ++sub_colony_multiplications;
             for (auto &g: graphs_nxt) {
                 for (int i = 0; i < mul; ++i) {
                     graphs.push_back(g);
@@ -121,32 +133,39 @@ Graph go_with_the_winners(Graph &start, GoNext go_next, CheckConstraints check_c
         }
     }
 
-    return Graph();
+    return make_shared<Graph>();
 }
 
-Graph go_go(int n, GoNext go_next, CheckConstraints check_cons,
-            CheckWin check_win, int sz = 2, int mul = 2, int max_iter = 1000) {
+GraphPtr go_go(int n, GoNext go_next, CheckConstraints check_cons,
+            CheckWin check_win, int sz = 10, int mul = 2, int max_iter = 10000) {
 
     for (int i = 0; i < 100; ++i) {
         auto start = gen_rand_tree(n);
         auto res = go_with_the_winners(start, go_next, check_cons, check_win, sz, mul, max_iter);
-        if (!res.empty()) return res;
+        if (!res->empty()) {
+            cout << "Main        : " << i + 1 << endl;
+            cout << "Sub avg     : " << fixed << 1.0 * sub_iterations / (i + 1) << endl;
+            cout << "Edgepick avg: " << fixed << 1.0 * edge_pick_iterations / sub_iterations << endl;
+            cout << "Edgepick tot: " << edge_pick_iterations << endl;
+            cout << "Colony mul: " << sub_colony_multiplications << endl;
+            return res;
+        }
     }
-    return Graph();
+    return make_shared<Graph>();
 }
 
-Graph gen_rand_graph_bridges(int n, int left_bridges_bound, int right_bridges_bound) {
+GraphPtr gen_rand_graph_bridges(int n, int left_bridges_bound, int right_bridges_bound) {
 
-    auto check_cons = [&](Graph &g) {
-        int cnt = g.count_bridges();
+    auto check_cons = [&](GraphPtr g) {
+        int cnt = g->count_bridges();
         return left_bridges_bound <= cnt;
     };
-    auto check_win = [&](Graph &g) {
-        int cnt = g.count_bridges();
+    auto check_win = [&](GraphPtr g) {
+        int cnt = g->count_bridges();
         return left_bridges_bound <= cnt && cnt <= right_bridges_bound;
     };
-    auto go_next = [&](Graph &g) {
-        g.add_random_edge();
+    auto go_next = [&](GraphPtr g) {
+        g->add_random_edge();
     };
 
 //    return go_with_the_winners(tree, add_random_edge, check_cons, check_win);
@@ -157,7 +176,7 @@ signed main() {
 #ifndef ONLINE_JUDGE
     freopen("input.txt", "r", stdin);
 #endif
-    ios_base::sync_with_stdio(0); cin.tie(0);
+//    ios_base::sync_with_stdio(0); cin.tie(0);
 
     auto timeit = [&](function<void()> f) {
         auto start = chrono::high_resolution_clock::now();
@@ -168,17 +187,18 @@ signed main() {
         return res.count();
     };
 
-    int n = 700;
+    int n = 2000;
+    GraphPtr g;
     auto tim = timeit([&]() {
-        auto g = gen_rand_graph_bridges(n, 28, 28);
-        int bridges_cnt = g.count_bridges();
+        g = gen_rand_graph_bridges(n, 3, 5);
+        int bridges_cnt = g->count_bridges();
         cout << bridges_cnt << endl;
     });
 
     cout << tim;
 
 //    for (int i = 0; i < n; ++i) {
-//        for (auto child : g[i]) {
+//        for (auto child : g->g[i]) {
 //            if (i <= child) {
 //                printf("g.add_edge(%d, %d, color='%s')\n", i, child, (bridges_list.count({i, child}) ? "red" : "blue"));
 //            }
