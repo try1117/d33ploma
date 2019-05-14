@@ -5,19 +5,23 @@ namespace graph_constraint_solver {
 
     }
 
-    BridgeConstraint::BridgeConstraint(int l_bound, int r_bound, GraphPtr graph_ptr)
-        : l_bound(l_bound), r_bound(r_bound), graph_ptr(graph_ptr) {
+    BridgeConstraint::BridgeConstraint(int l_bound, int r_bound)
+        : l_bound(l_bound), r_bound(r_bound), graph_ptr_(nullptr) {
 
     }
 
+    void BridgeConstraint::bind_graph(GraphPtr graph_ptr) {
+        graph_ptr_ = graph_ptr;
+    }
+
     ConstraintSatisfactionVerdict BridgeConstraint::check() {
-        return check(graph_ptr);
+        return check(graph_ptr_);
     }
 
     ConstraintSatisfactionVerdict BridgeConstraint::check(GraphPtr graph_ptr) {
         auto t = count_bridges(graph_ptr);
-        if (t.first < l_bound) return kFail;
-        if (t.first > r_bound) return kNotYet;
+        if (t.first < l_bound) return kImpossible;
+        if (t.first > r_bound) return kPossible;
         return kOK;
     }
 
@@ -53,4 +57,41 @@ namespace graph_constraint_solver {
         _count_bridges(graph_ptr, 0, -1, res, save_bridges);
         return res;
     }
+
+    void ConstraintList::add_constraint(ConstraintPtr constraint) {
+        constraints_.push_back(constraint);
+    }
+
+    const std::vector<ConstraintPtr> ConstraintList::constraints() {
+        return constraints_;
+    }
+
+    void ConstraintList::bind_graph(GraphPtr graph_ptr) {
+        for (auto &c : constraints_) {
+            c->bind_graph(graph_ptr);
+        }
+    }
+
+    void ConstraintList::add_directed_edge(int from, int to) {
+        for (auto &c : constraints_) {
+            c->add_directed_edge(from, to);
+        }
+    }
+
+    ConstraintSatisfactionVerdict ConstraintList::check() {
+        ConstraintSatisfactionVerdict res = kOK;
+        for (auto &c : constraints_) {
+            res = std::min(res, c->check());
+        }
+        return res;
+    }
+    ConstraintSatisfactionVerdict ConstraintList::check(GraphPtr graph_ptr) {
+        ConstraintSatisfactionVerdict res = kOK;
+        for (auto &c : constraints_) {
+            res = std::min(res, c->check(graph_ptr));
+        }
+        return res;
+    }
+
+
 }
