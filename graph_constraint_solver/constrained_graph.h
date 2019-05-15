@@ -13,6 +13,7 @@ namespace graph_constraint_solver {
         ConstrainedGraph();
         ConstrainedGraph(ConstraintListPtr constraint_list_ptr, GraphPtr graph_ptr);
         ConstraintListPtr constraint_list_ptr();
+        GraphPtr graph_ptr();
 
         void add_directed_edge(int from, int to);
         void add_undirected_edge(int from, int to);

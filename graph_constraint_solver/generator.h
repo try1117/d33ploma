@@ -14,7 +14,7 @@ namespace graph_constraint_solver {
         ConstrainedGraphPtr generate(ConstraintListPtr constraint_list_ptr);
 
         ConstrainedGraphPtr go_with_the_winners(ConstrainedGraphPtr start_graph_ptr, GoNext go_next,
-                int colony_size = 2, int growth_rate = 2, int outer_iterations = 10, int inner_iterations = 10000);
+                int colony_size = 1, int growth_rate = 2, int outer_iterations = 10, int inner_iterations = 10000);
 
         ConstrainedGraphPtr single_component_generator(int n, ConstraintListPtr constraint_list_ptr);
     };

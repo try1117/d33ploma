@@ -40,11 +40,20 @@ namespace graph_constraint_solver {
 
     std::pair<int, int> TreeConstraint::recommend_directed_edge() {
         // TODO: check for latest_connected_vertex_ == n - 1
-        return {Random::next(latest_connected_vertex_), latest_connected_vertex_ + 1};
+        return {Random::next(latest_connected_vertex_ + 1), latest_connected_vertex_ + 1};
     }
 
     std::pair<int, int> TreeConstraint::recommend_undirected_edge() {
         return recommend_directed_edge();
+    }
+
+    void TreeConstraint::add_directed_edge(int from, int to) {
+        // TODO: normal version
+        latest_connected_vertex_ = std::max(latest_connected_vertex_, std::max(from, to));
+    }
+
+    void TreeConstraint::add_undirected_edge(int from, int to) {
+        latest_connected_vertex_ = std::max(latest_connected_vertex_, std::max(from, to));
     }
 
     ConstraintSatisfactionVerdict TreeConstraint::check() {

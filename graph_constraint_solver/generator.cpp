@@ -7,7 +7,7 @@ namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
 //        int n = constraint_list_ptr->vertex_count();
-        int n = 100;
+        int n = 10;
         return single_component_generator(n, constraint_list_ptr);
     }
 
@@ -16,6 +16,10 @@ namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::go_with_the_winners(ConstrainedGraphPtr start_graph_ptr, GoNext go_next,
             int colony_size, int growth_rate, int outer_iterations, int inner_iterations) {
+
+        if (start_graph_ptr->check() == kOK) {
+            return start_graph_ptr;
+        }
 
         int threshold = colony_size / growth_rate;
 
@@ -72,6 +76,7 @@ namespace graph_constraint_solver {
         };
 
         auto result = go_with_the_winners(tree, go_build_residue);
+        return result;
 
 //        for (int i = 0; i < 100; ++i) {
 //            auto start = gen_rand_tree(n);

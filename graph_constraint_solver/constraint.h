@@ -26,7 +26,7 @@ namespace graph_constraint_solver {
     public:
         explicit Constraint(ConstraintType type);
         ConstraintType type();
-        void bind_graph(GraphPtr graph_ptr);
+        virtual void bind_graph(GraphPtr graph_ptr);
 
         // TODO: return Edge type instead of std::pair<int, int>
         virtual void add_directed_edge(int from, int to);
@@ -42,12 +42,13 @@ namespace graph_constraint_solver {
         ConstraintType type_;
     };
 
-    class TreeConstraint : protected Constraint {
+    class TreeConstraint : public Constraint {
     public:
         TreeConstraint();
 //        void bind_graph(GraphPtr graph_ptr);
 
-//        void add_directed_edge(int from, int to) override;
+        void add_directed_edge(int from, int to) override;
+        void add_undirected_edge(int from, int to) override;
         std::pair<int, int> recommend_directed_edge() override;
         std::pair<int, int> recommend_undirected_edge() override;
 

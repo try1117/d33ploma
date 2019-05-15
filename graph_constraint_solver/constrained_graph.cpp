@@ -19,6 +19,9 @@ namespace graph_constraint_solver {
         return constraint_list_ptr_;
     }
 
+    GraphPtr ConstrainedGraph::graph_ptr() {
+        return graph_ptr_;
+    }
 
     bool ConstrainedGraph::empty() {
         return graph_ptr_ == nullptr || graph_ptr_->empty();
