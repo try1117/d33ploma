@@ -12,9 +12,12 @@ namespace graph_constraint_solver {
     public:
         ConstrainedGraph();
         ConstrainedGraph(ConstraintListPtr constraint_list_ptr, GraphPtr graph_ptr);
+        ConstraintListPtr constraint_list_ptr();
 
-        void add_edge(int from, int to);
-        void add_random_edge();
+        void add_directed_edge(int from, int to);
+        void add_undirected_edge(int from, int to);
+        void add_random_directed_edge();
+        void add_random_undirected_edge();
         bool empty();
         ConstraintSatisfactionVerdict check();
 

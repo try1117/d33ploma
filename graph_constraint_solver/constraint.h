@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <map>
 
 #include "graph.h"
 
@@ -15,29 +16,58 @@ namespace graph_constraint_solver {
             kOK = 2,
     };
 
+    enum ConstraintType : unsigned char {
+        kNone,
+        kTree,
+        kBridge,
+    };
+
     class Constraint {
     public:
-        virtual void add_directed_edge(int, int) = 0;
+        explicit Constraint(ConstraintType type);
+        ConstraintType type();
+        void bind_graph(GraphPtr graph_ptr);
+
+        // TODO: return Edge type instead of std::pair<int, int>
+        virtual void add_directed_edge(int from, int to);
+        virtual void add_undirected_edge(int from, int to);
+        virtual std::pair<int, int> recommend_directed_edge();
+        virtual std::pair<int, int> recommend_undirected_edge();
+
         virtual ConstraintSatisfactionVerdict check() = 0;
         virtual ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) = 0;
-        virtual void bind_graph(GraphPtr graph_ptr);
 
     protected:
         GraphPtr graph_ptr_;
+        ConstraintType type_;
     };
 
-    class BridgeConstraint : public Constraint {
+    class TreeConstraint : protected Constraint {
     public:
-        BridgeConstraint(int l_bound, int r_bound);
-        void bind_graph(GraphPtr graph_ptr) override;
-        void add_directed_edge(int from, int to) override;
+        TreeConstraint();
+//        void bind_graph(GraphPtr graph_ptr);
+
+//        void add_directed_edge(int from, int to) override;
+        std::pair<int, int> recommend_directed_edge() override;
+        std::pair<int, int> recommend_undirected_edge() override;
+
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr g) override;
 
     private:
-        int l_bound, r_bound;
+        int latest_connected_vertex_;
+    };
 
-        // can make this variables static
+    class BridgeConstraint : public Constraint {
+    public:
+        BridgeConstraint(int left_bound, int right_bound);
+//        void bind_graph(GraphPtr graph_ptr) override;
+//        void add_directed_edge(int from, int to) override;
+        ConstraintSatisfactionVerdict check() override;
+        ConstraintSatisfactionVerdict check(GraphPtr g) override;
+
+    private:
+        int left_bound_, right_bound_;
         std::vector<int> tin, fup;
         int timer;
         std::set<std::pair<int, int>> bridges_list;
@@ -50,19 +80,25 @@ namespace graph_constraint_solver {
 
     class ConstraintList : public Constraint {
     public:
-//        ConstraintList() = default;
-        void parse_JSON(std::string filepath) {}
-        void parse_XML(std::string filepath) {}
-        void add_constraint(ConstraintPtr constraint);
-        const std::vector<ConstraintPtr> constraints();
-        void bind_graph(GraphPtr graph_ptr) override;
+        ConstraintList();
+        std::map<ConstraintType, ConstraintPtr> constraints();
+        void bind_graph(GraphPtr graph_ptr);
 
+        void add_constraint(ConstraintPtr constraint_ptr);
         void add_directed_edge(int, int) override;
+        void add_undirected_edge(int, int) override;
+
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
 
+        // TODO: parse
+        void parse_JSON(std::string filepath) {}
+        void parse_XML(std::string filepath) {}
+
     private:
-        std::vector<ConstraintPtr> constraints_;
+        // TODO: maybe we need std::map<ConstraintType, std::vector<ConstraintPtr>>
+        // not sure now whether we'll have multiple constraints of the same type
+        std::map<ConstraintType, ConstraintPtr> constraints_;
     };
 
     using ConstraintListPtr = std::shared_ptr<ConstraintList>;

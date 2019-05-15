@@ -15,14 +15,15 @@ namespace graph_constraint_solver {
 
         Graph(int n = 0);
         bool empty();
+        bool is_leaf(int v);
 
         void add_undirected_edge(int u, int v);
         void add_directed_edge(int u, int v);
-        void add_random_edge(std::function<void(int, int)> notify);
 
-        bool is_leaf(int v);
+        std::pair<int, int> generate_random_directed_edge();
+        std::pair<int, int> generate_random_undirected_edge();
 
-        // TODO: move this to a separate entity?
+            // TODO: move this to a separate entity?
         // this functions are imposed on graph by specific constraints
         // in this case constrains related to bridges
         // there will be more constraints, that may or may not have common features

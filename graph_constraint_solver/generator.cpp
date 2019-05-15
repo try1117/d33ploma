@@ -58,19 +58,20 @@ namespace graph_constraint_solver {
     }
 
     ConstrainedGraphPtr Generator::single_component_generator(int n, ConstraintListPtr constraint_list_ptr) {
-        auto go_next_tree = [](ConstrainedGraphPtr g) {
-            g->add_random_edge();
+        auto go_build_tree = [](ConstrainedGraphPtr g) {
+            auto edge = g->constraint_list_ptr()->constraints().at(kTree)->recommend_undirected_edge();
+            g->add_undirected_edge(edge.first, edge.second);
         };
 
         ConstrainedGraphPtr empty_graph = std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(n));
 
-        auto tree = go_with_the_winners(empty_graph, go_next_tree);
+        auto tree = go_with_the_winners(empty_graph, go_build_tree);
 
-        auto go_next_residue = [](ConstrainedGraphPtr g) {
-            g->add_random_edge();
+        auto go_build_residue = [](ConstrainedGraphPtr g) {
+            g->add_random_undirected_edge();
         };
 
-        auto result = go_with_the_winners(tree, );
+        auto result = go_with_the_winners(tree, go_build_residue);
 
 //        for (int i = 0; i < 100; ++i) {
 //            auto start = gen_rand_tree(n);
