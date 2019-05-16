@@ -7,13 +7,20 @@
 
 namespace graph_constraint_solver {
 
+    // TODO: directed/undirected graph
+    // in future think about using boost::graph or something like that
+    // now it is primarily undirected graph
     class Graph {
     public:
-        explicit Graph(int n = 0);
+        explicit Graph(int order = 0);
+        // number of vertices
+        int order();
+        // number of undirected edges
+        int size();
+        const std::vector<std::vector<int>>& adjacency_list();
+
         bool empty();
         bool is_leaf(int v);
-        int order();
-        const std::vector<std::vector<int>>& edges();
 
         void add_undirected_edge(int u, int v);
         void add_directed_edge(int u, int v);
@@ -22,7 +29,8 @@ namespace graph_constraint_solver {
         std::pair<int, int> generate_random_undirected_edge();
 
     private:
-        int n_;
+        int order_;
+        int size_;
         std::vector<std::vector<int>> g_;
         std::vector<std::vector<bool>> ma_;
     };

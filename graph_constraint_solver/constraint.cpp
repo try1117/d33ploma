@@ -95,15 +95,22 @@ namespace graph_constraint_solver {
 
     }
 
-//    void BridgeConstraint::bind_graph(GraphPtr graph_ptr) {
-//        graph_ptr_ = graph_ptr;
-//    }
+    void BridgeConstraint::bind_graph(GraphPtr graph_ptr) {
+        Constraint::bind_graph(graph_ptr);
+        tin.resize(graph_ptr->order());
+        fup.resize(graph_ptr->order());
+    }
 
     ConstraintSatisfactionVerdict BridgeConstraint::check() {
         return check(graph_ptr_);
     }
 
     ConstraintSatisfactionVerdict BridgeConstraint::check(GraphPtr graph_ptr) {
+        // TODO: think about it
+        // do not count bridges when graph is not even tree
+        if (graph_ptr->size() < graph_ptr->order() - 1) {
+            return kOK;
+        }
         auto t = count_bridges(graph_ptr);
         if (t.first < left_bound_) return kImpossible;
         if (t.first > right_bound_) return kPossible;
@@ -112,7 +119,7 @@ namespace graph_constraint_solver {
 
     int BridgeConstraint::_count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges) {
         tin[v] = fup[v] = ++timer;
-        for (auto child : graph_ptr->edges()[v]) {
+        for (auto child : graph_ptr->adjacency_list()[v]) {
             if (child != pr) {
                 if (!tin[child]) {
                     _count_bridges(graph_ptr, child, v, res, save_bridges);
@@ -122,7 +129,7 @@ namespace graph_constraint_solver {
                             ++res.second;
                         }
                         if (save_bridges) {
-                            bridges_list.emplace(std::min(v, child), std::max(v, child));
+                            bridges_list_.emplace(std::min(v, child), std::max(v, child));
                         }
                     }
                     fup[v] = std::min(fup[v], fup[child]);
@@ -143,13 +150,42 @@ namespace graph_constraint_solver {
         return res;
     }
 
+    std::set<std::pair<int, int>> BridgeConstraint::get_bridges_list() {
+        return bridges_list_;
+    }
+
     ConstraintList::ConstraintList()
         : Constraint(kNone) {
 
     }
 
+    bool ConstraintList::has_constraint(ConstraintType constraint_type) {
+        return constraints_.count(constraint_type);
+    }
+
+    ConstraintPtr ConstraintList::get_constraint(ConstraintType constraint_type) {
+        if (has_constraint(constraint_type)) {
+            return constraints_.at(constraint_type);
+        }
+        return nullptr;
+    }
+
     void ConstraintList::add_constraint(ConstraintPtr constraint_ptr) {
         constraints_[constraint_ptr->type()] = constraint_ptr;
+    }
+
+    void ConstraintList::remove_constraint(ConstraintType constraint_type) {
+//        if (has_constraint(constraint_type)) {
+        constraints_.erase(constraint_type);
+//        }
+    }
+
+    void ConstraintList::add_goal_constraint(ConstraintType constraint_type) {
+        important_constraints_.emplace(constraint_type);
+    }
+
+    void ConstraintList::remove_goal_constraint(ConstraintType constraint_type) {
+        important_constraints_.erase(constraint_type);
     }
 
     std::map<ConstraintType, ConstraintPtr> ConstraintList::constraints() {
@@ -179,6 +215,10 @@ namespace graph_constraint_solver {
         for (auto &c : constraints_) {
             res = std::min(res, c.second->check());
         }
+        auto res_goals = check_goals();
+        if (res_goals == kOK && res >= kPossible) {
+            return kOK;
+        }
         return res;
     }
 
@@ -187,8 +227,35 @@ namespace graph_constraint_solver {
         for (auto &c : constraints_) {
             res = std::min(res, c.second->check(graph_ptr));
         }
+        auto res_goals = check_goals(graph_ptr);
+        if (res_goals == kOK && res >= kPossible) {
+            return kOK;
+        }
         return res;
     }
 
+    ConstraintSatisfactionVerdict ConstraintList::check_goals() {
+        if (!important_constraints_.empty()) {
+            ConstraintSatisfactionVerdict res = kOK;
+            for (auto imporant : important_constraints_) {
+                res = std::min(res, constraints_[imporant]->check());
+            }
+            return res;
+        }
+        return kPossible;
+    }
 
+    ConstraintSatisfactionVerdict ConstraintList::check_goals(GraphPtr graph_ptr) {
+        // TODO: think about it
+        // may be change arguments in check functions (default = nullptr???)
+        // alert copy-paste
+        if (!important_constraints_.empty()) {
+            ConstraintSatisfactionVerdict res = kOK;
+            for (auto imporant : important_constraints_) {
+                res = std::min(res, constraints_[imporant]->check(graph_ptr));
+            }
+            return res;
+        }
+        return kPossible;
+    }
 }

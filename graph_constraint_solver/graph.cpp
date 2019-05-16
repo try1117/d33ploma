@@ -3,13 +3,14 @@
 #include "utils.h"
 
 namespace graph_constraint_solver {
-    Graph::Graph(int n)
-        : n_(n), g_(n, std::vector<int>()), ma_(n, std::vector<bool>(n)) {
+    Graph::Graph(int order)
+        : order_(order), size_(0),
+        g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
 
     }
 
     bool Graph::empty() {
-        return n_ == 0;
+        return order_ == 0;
     }
 
     bool Graph::is_leaf(int v) {
@@ -17,16 +18,21 @@ namespace graph_constraint_solver {
     }
 
     int Graph::order() {
-        return n_;
+        return order_;
     }
 
-    const std::vector<std::vector<int>>& Graph::edges() {
+    int Graph::size() {
+        return size_;
+    }
+
+    const std::vector<std::vector<int>>& Graph::adjacency_list() {
         return g_;
     }
 
     void Graph::add_undirected_edge(int u, int v) {
         add_directed_edge(u, v);
         add_directed_edge(v, u);
+        ++size_;
     }
 
     void Graph::add_directed_edge(int u, int v) {
@@ -35,15 +41,15 @@ namespace graph_constraint_solver {
     }
 
     std::pair<int, int> Graph::generate_random_directed_edge() {
-        int u = Random::next(n_);
-        while (g_[u].size() == n_) {
-            u = Random::next(n_);
+        int u = Random::next(order_);
+        while (g_[u].size() == order_) {
+            u = Random::next(order_);
 //            ++edge_pick_iterations;
         }
 
-        int v = Random::next(n_);
+        int v = Random::next(order_);
         while (ma_[u][v]) {
-            v = Random::next(n_);
+            v = Random::next(order_);
 //            ++edge_pick_iterations;
         }
         return {u, v};

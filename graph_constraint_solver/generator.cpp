@@ -61,20 +61,31 @@ namespace graph_constraint_solver {
         return std::make_shared<ConstrainedGraph>();
     }
 
-    ConstrainedGraphPtr Generator::single_component_generator(int n, ConstraintListPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::single_component_generator(int order, ConstraintListPtr constraint_list_ptr) {
+
+        bool remove_tree_constraint = false;
+        if (!constraint_list_ptr->has_constraint(kTree)) {
+            constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>());
+            remove_tree_constraint = true;
+        }
+        constraint_list_ptr->add_goal_constraint(kTree);
+
         auto go_build_tree = [](ConstrainedGraphPtr g) {
             auto edge = g->constraint_list_ptr()->constraints().at(kTree)->recommend_undirected_edge();
             g->add_undirected_edge(edge.first, edge.second);
         };
 
-        ConstrainedGraphPtr empty_graph = std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(n));
+        ConstrainedGraphPtr empty_graph = std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order));
 
         auto tree = go_with_the_winners(empty_graph, go_build_tree);
+        if (remove_tree_constraint) {
+            constraint_list_ptr->remove_constraint(kTree);
+        }
+        constraint_list_ptr->remove_goal_constraint(kTree);
 
         auto go_build_residue = [](ConstrainedGraphPtr g) {
             g->add_random_undirected_edge();
         };
-
         auto result = go_with_the_winners(tree, go_build_residue);
         return result;
 

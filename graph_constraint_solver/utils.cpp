@@ -2,7 +2,8 @@
 
 namespace graph_constraint_solver {
     int Random::next(int n) {
-        static std::mt19937 rng(123456);
+//        static std::mt19937 rng(123456);
+        static std::mt19937 rng(std::chrono::high_resolution_clock().now().time_since_epoch().count());
         return rng() % n;
     }
 
