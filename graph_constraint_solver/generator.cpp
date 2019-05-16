@@ -6,9 +6,9 @@
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
-//        int n = constraint_list_ptr->vertex_count();
-        int n = 10;
-        return single_component_generator(n, constraint_list_ptr);
+        auto order_constraint = std::static_pointer_cast<OrderConstraint>(constraint_list_ptr->constraints().at(kOrder));
+        auto order = order_constraint->order();
+        return single_component_generator(order, constraint_list_ptr);
     }
 
 //    int sub_iterations;

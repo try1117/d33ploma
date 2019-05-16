@@ -33,6 +33,25 @@ namespace graph_constraint_solver {
         return graph_ptr_->generate_random_undirected_edge();
     }
 
+    OrderConstraint::OrderConstraint(int order)
+        : Constraint(kOrder), order_(order) {
+
+    }
+
+    int OrderConstraint::order() {
+        return order_;
+    }
+
+    ConstraintSatisfactionVerdict OrderConstraint::check() {
+        return check(graph_ptr_);
+    }
+
+    ConstraintSatisfactionVerdict OrderConstraint::check(GraphPtr graph_ptr) {
+        // TODO: think about possible gradual change of graph_ptr->order()
+        if (graph_ptr->order() == order_) return kOK;
+        return kImpossible;
+    }
+
     TreeConstraint::TreeConstraint()
         : Constraint(kTree), latest_connected_vertex_(0) {
 
@@ -57,8 +76,8 @@ namespace graph_constraint_solver {
     }
 
     ConstraintSatisfactionVerdict TreeConstraint::check() {
-        if (latest_connected_vertex_ > graph_ptr_->n - 1) return kImpossible;
-        if (latest_connected_vertex_ < graph_ptr_->n - 1) return kPossible;
+        if (latest_connected_vertex_ > graph_ptr_->order() - 1) return kImpossible;
+        if (latest_connected_vertex_ < graph_ptr_->order() - 1) return kPossible;
         return kOK;
     }
 
@@ -93,7 +112,7 @@ namespace graph_constraint_solver {
 
     int BridgeConstraint::_count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges) {
         tin[v] = fup[v] = ++timer;
-        for (auto child : graph_ptr->g[v]) {
+        for (auto child : graph_ptr->edges()[v]) {
             if (child != pr) {
                 if (!tin[child]) {
                     _count_bridges(graph_ptr, child, v, res, save_bridges);

@@ -18,6 +18,7 @@ namespace graph_constraint_solver {
 
     enum ConstraintType : unsigned char {
         kNone,
+        kOrder,
         kTree,
         kBridge,
     };
@@ -42,6 +43,17 @@ namespace graph_constraint_solver {
         ConstraintType type_;
     };
 
+    class OrderConstraint : public Constraint {
+    public:
+        OrderConstraint(int order);
+        int order();
+        ConstraintSatisfactionVerdict check() override;
+        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+
+    private:
+        int order_;
+    };
+
     class TreeConstraint : public Constraint {
     public:
         TreeConstraint();
@@ -53,7 +65,7 @@ namespace graph_constraint_solver {
         std::pair<int, int> recommend_undirected_edge() override;
 
         ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr g) override;
+        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
 
     private:
         int latest_connected_vertex_;
@@ -83,7 +95,7 @@ namespace graph_constraint_solver {
     public:
         ConstraintList();
         std::map<ConstraintType, ConstraintPtr> constraints();
-        void bind_graph(GraphPtr graph_ptr);
+        void bind_graph(GraphPtr graph_ptr) override;
 
         void add_constraint(ConstraintPtr constraint_ptr);
         void add_directed_edge(int, int) override;
