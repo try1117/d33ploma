@@ -52,6 +52,25 @@ namespace graph_constraint_solver {
         return kImpossible;
     }
 
+    SizeConstraint::SizeConstraint(int size)
+            : Constraint(kSize), size_(size) {
+
+    }
+
+    int SizeConstraint::size() {
+        return size_;
+    }
+
+    ConstraintSatisfactionVerdict SizeConstraint::check() {
+        return check(graph_ptr_);
+    }
+
+    ConstraintSatisfactionVerdict SizeConstraint::check(GraphPtr graph_ptr) {
+        if (graph_ptr->size() > size_) return kImpossible;
+        if (graph_ptr->size() < size_) return kPossible;
+        return kOK;
+    }
+
     TreeConstraint::TreeConstraint()
         : Constraint(kTree), latest_connected_vertex_(0) {
 
@@ -161,13 +180,6 @@ namespace graph_constraint_solver {
 
     bool ConstraintList::has_constraint(ConstraintType constraint_type) {
         return constraints_.count(constraint_type);
-    }
-
-    ConstraintPtr ConstraintList::get_constraint(ConstraintType constraint_type) {
-        if (has_constraint(constraint_type)) {
-            return constraints_.at(constraint_type);
-        }
-        return nullptr;
     }
 
     void ConstraintList::add_constraint(ConstraintPtr constraint_ptr) {

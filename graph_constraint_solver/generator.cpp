@@ -6,8 +6,7 @@
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
-        auto order_constraint = std::static_pointer_cast<OrderConstraint>(constraint_list_ptr->constraints().at(kOrder));
-        auto order = order_constraint->order();
+        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(kOrder)->order();
         return single_component_generator(order, constraint_list_ptr);
     }
 
@@ -37,6 +36,9 @@ namespace graph_constraint_solver {
                     go_next(g);
                     auto constraint_verdict = g->check();
                     if (constraint_verdict == kOK) {
+                        if (g->graph_ptr()->size() > 30) {
+                            g->check();
+                        }
                         return g;
                     }
                     if (constraint_verdict == kPossible) {

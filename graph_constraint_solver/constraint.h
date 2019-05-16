@@ -19,6 +19,7 @@ namespace graph_constraint_solver {
     enum ConstraintType : unsigned char {
         kNone,
         kOrder,
+        kSize,
         kTree,
         kBridge,
     };
@@ -46,13 +47,24 @@ namespace graph_constraint_solver {
 
     class OrderConstraint : public Constraint {
     public:
-        OrderConstraint(int order);
+        explicit OrderConstraint(int order);
         int order();
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
 
     private:
         int order_;
+    };
+
+    class SizeConstraint : public Constraint {
+    public:
+        explicit SizeConstraint(int size);
+        int size();
+        ConstraintSatisfactionVerdict check() override;
+        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+
+    private:
+        int size_;
     };
 
     class TreeConstraint : public Constraint {
@@ -101,9 +113,17 @@ namespace graph_constraint_solver {
 
         std::map<ConstraintType, ConstraintPtr> constraints();
         bool has_constraint(ConstraintType constraint_type);
-        ConstraintPtr get_constraint(ConstraintType constraint_type);
+
         void add_constraint(ConstraintPtr constraint_ptr);
         void remove_constraint(ConstraintType constraint_type);
+
+        template <typename T>
+        std::shared_ptr<T> get_constraint(ConstraintType constraint_type) {
+            if (has_constraint(constraint_type)) {
+                return std::static_pointer_cast<T>(constraints_.at(constraint_type));
+            }
+            return nullptr;
+        }
 
         void add_goal_constraint(ConstraintType constraint_type);
         void remove_goal_constraint(ConstraintType constraint_type);
