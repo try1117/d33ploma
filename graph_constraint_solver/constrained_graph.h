@@ -12,6 +12,7 @@ namespace graph_constraint_solver {
     public:
         ConstrainedGraph();
         ConstrainedGraph(ConstraintListPtr constraint_list_ptr, GraphPtr graph_ptr);
+        ConstrainedGraph(ConstrainedGraph &other);
         ConstraintListPtr constraint_list_ptr();
         GraphPtr graph_ptr();
 

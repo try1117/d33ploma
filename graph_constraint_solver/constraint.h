@@ -24,11 +24,17 @@ namespace graph_constraint_solver {
         kBridge,
     };
 
+    class Constraint;
+    using ConstraintPtr = std::shared_ptr<Constraint>;
+
     // TODO: store version and last ConstraintSatisfactionVerdict
     class Constraint {
     public:
         explicit Constraint(ConstraintType type);
+        virtual ConstraintPtr clone() = 0;
+
         ConstraintType type();
+        GraphPtr graph_ptr();
         virtual void bind_graph(GraphPtr graph_ptr);
 
         // TODO: return Edge type instead of std::pair<int, int>
@@ -48,6 +54,7 @@ namespace graph_constraint_solver {
     class OrderConstraint : public Constraint {
     public:
         explicit OrderConstraint(int order);
+        ConstraintPtr clone() override;
         int order();
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
@@ -59,6 +66,7 @@ namespace graph_constraint_solver {
     class SizeConstraint : public Constraint {
     public:
         explicit SizeConstraint(int size);
+        ConstraintPtr clone() override;
         int size();
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
@@ -70,6 +78,7 @@ namespace graph_constraint_solver {
     class TreeConstraint : public Constraint {
     public:
         TreeConstraint();
+        ConstraintPtr clone() override;
 //        void bind_graph(GraphPtr graph_ptr);
 
         void add_directed_edge(int from, int to) override;
@@ -87,6 +96,7 @@ namespace graph_constraint_solver {
     class BridgeConstraint : public Constraint {
     public:
         BridgeConstraint(int left_bound, int right_bound);
+        ConstraintPtr clone() override;
         void bind_graph(GraphPtr graph_ptr) override;
 //        void add_directed_edge(int from, int to) override;
         ConstraintSatisfactionVerdict check() override;
@@ -104,11 +114,12 @@ namespace graph_constraint_solver {
         int _count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges = false);
     };
 
-    using ConstraintPtr = std::shared_ptr<Constraint>;
-
     class ConstraintList : public Constraint {
     public:
         ConstraintList();
+        ConstraintList(ConstraintList &other);
+        ConstraintPtr clone() override;
+
         void bind_graph(GraphPtr graph_ptr) override;
 
         std::map<ConstraintType, ConstraintPtr> constraints();

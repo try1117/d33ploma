@@ -15,6 +15,12 @@ namespace graph_constraint_solver {
         constraint_list_ptr->bind_graph(graph_ptr);
     }
 
+    ConstrainedGraph::ConstrainedGraph(ConstrainedGraph &other)
+        : ConstrainedGraph(std::make_shared<ConstraintList>(*other.constraint_list_ptr()),
+                std::make_shared<Graph>(*other.graph_ptr())) {
+
+    }
+
     ConstraintListPtr ConstrainedGraph::constraint_list_ptr() {
         return constraint_list_ptr_;
     }

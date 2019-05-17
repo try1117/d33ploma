@@ -4,6 +4,16 @@
 
 namespace graph_constraint_solver {
 
+    template<typename T>
+    std::shared_ptr<T> clone_constraint(T &other) {
+//        auto other_t = std::static_pointer_cast<T>(other);
+        auto result = std::make_shared<T>(other);
+        result->bind_graph(std::make_shared<Graph>(*other.graph_ptr()));
+        return result;
+    }
+
+    // Constraint
+
     Constraint::Constraint(ConstraintType type)
         : type_(type), graph_ptr_(nullptr) {
 
@@ -11,6 +21,10 @@ namespace graph_constraint_solver {
 
     ConstraintType Constraint::type() {
         return type_;
+    }
+
+    GraphPtr Constraint::graph_ptr() {
+        return graph_ptr_;
     }
 
     void Constraint::bind_graph(GraphPtr graph_ptr) {
@@ -33,9 +47,15 @@ namespace graph_constraint_solver {
         return graph_ptr_->generate_random_undirected_edge();
     }
 
+    // OrderConstraint
+
     OrderConstraint::OrderConstraint(int order)
         : Constraint(kOrder), order_(order) {
 
+    }
+
+    ConstraintPtr OrderConstraint::clone() {
+        return clone_constraint<OrderConstraint>(*this);
     }
 
     int OrderConstraint::order() {
@@ -52,9 +72,15 @@ namespace graph_constraint_solver {
         return kImpossible;
     }
 
+    // SizeConstraint
+
     SizeConstraint::SizeConstraint(int size)
             : Constraint(kSize), size_(size) {
 
+    }
+
+    ConstraintPtr SizeConstraint::clone() {
+        return clone_constraint<SizeConstraint>(*this);
     }
 
     int SizeConstraint::size() {
@@ -71,9 +97,15 @@ namespace graph_constraint_solver {
         return kOK;
     }
 
+    // TreeConstraint
+
     TreeConstraint::TreeConstraint()
         : Constraint(kTree), latest_connected_vertex_(0) {
 
+    }
+
+    ConstraintPtr TreeConstraint::clone() {
+        return clone_constraint<TreeConstraint>(*this);
     }
 
     std::pair<int, int> TreeConstraint::recommend_directed_edge() {
@@ -109,9 +141,15 @@ namespace graph_constraint_solver {
 //
 //    }
 
+    // BridgeConstraint
+
     BridgeConstraint::BridgeConstraint(int left_bound, int right_bound)
         : Constraint(kBridge), left_bound_(left_bound), right_bound_(right_bound) {
 
+    }
+
+    ConstraintPtr BridgeConstraint::clone() {
+        return clone_constraint<BridgeConstraint>(*this);
     }
 
     void BridgeConstraint::bind_graph(GraphPtr graph_ptr) {
@@ -173,9 +211,25 @@ namespace graph_constraint_solver {
         return bridges_list_;
     }
 
+    // ConstraintList
+
     ConstraintList::ConstraintList()
         : Constraint(kNone) {
 
+    }
+
+    // do nothing
+    ConstraintPtr ConstraintList::clone() {
+        return clone_constraint<ConstraintList>(*this);
+    }
+
+    ConstraintList::ConstraintList(ConstraintList &other)
+        : Constraint(kNone), important_constraints_(other.important_constraints_) {
+
+        for (auto &c : other.constraints_) {
+//            auto tmp = *c.second;
+            constraints_[c.first] = c.second->clone();//std::make_shared<Constraint>(*c.second->template clone());
+        }
     }
 
     bool ConstraintList::has_constraint(ConstraintType constraint_type) {

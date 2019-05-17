@@ -8,15 +8,19 @@
 namespace graph_constraint_solver {
 
     using GoNext = std::function<void(ConstrainedGraphPtr)>;
+    // TODO: may be instead of using a function we need to use Generator.generate()
+    using GraphGenerator = std::function<ConstrainedGraphPtr()>;
 
     class Generator {
     public:
         ConstrainedGraphPtr generate(ConstraintListPtr constraint_list_ptr);
 
-        ConstrainedGraphPtr go_with_the_winners(ConstrainedGraphPtr start_graph_ptr, GoNext go_next,
-                int colony_size = 1, int growth_rate = 2, int outer_iterations = 100, int inner_iterations = 10000);
+        ConstrainedGraphPtr go_with_the_winners(GraphGenerator initial_graph_generator, GoNext go_next, bool to_print = false,
+                int colony_size = 10, int growth_rate = 3, int outer_iterations = 10000, int inner_iterations = 10000);
 
-        ConstrainedGraphPtr single_component_generator(int n, ConstraintListPtr constraint_list_ptr);
+        // we can get rid of first argument, as it's stored in constraint_list_ptr OrderContraint
+        ConstrainedGraphPtr generate_single_component(int order, ConstraintListPtr constraint_list_ptr);
+        ConstrainedGraphPtr generate_tree(int order, ConstraintListPtr constraint_list_ptr);
     };
 }
 
