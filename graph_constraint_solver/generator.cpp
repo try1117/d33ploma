@@ -4,6 +4,8 @@
 #include <memory>
 #include <iostream>
 
+#include "utils.h"
+
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
@@ -76,7 +78,7 @@ namespace graph_constraint_solver {
     ConstrainedGraphPtr Generator::generate_tree(int order, ConstraintListPtr constraint_list_ptr) {
         bool remove_tree_constraint = false;
         if (!constraint_list_ptr->has_constraint(kTree)) {
-            constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>());
+            constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>(random.next(-10, 10)));
             remove_tree_constraint = true;
         }
         constraint_list_ptr->add_goal_constraint(kTree);

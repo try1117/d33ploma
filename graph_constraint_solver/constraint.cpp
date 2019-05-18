@@ -8,7 +8,7 @@ namespace graph_constraint_solver {
     std::shared_ptr<T> clone_constraint(T &other) {
 //        auto other_t = std::static_pointer_cast<T>(other);
         auto result = std::make_shared<T>(other);
-        result->bind_graph(std::make_shared<Graph>(*other.graph_ptr()));
+//        result->bind_graph(std::make_shared<Graph>(*other.graph_ptr()));
         return result;
     }
 
@@ -74,8 +74,9 @@ namespace graph_constraint_solver {
 
     // SizeConstraint
 
-    SizeConstraint::SizeConstraint(int size)
-            : Constraint(kSize), size_(size) {
+    SizeConstraint::SizeConstraint(int left_bound, int right_bound)
+            : Constraint(kSize), left_bound_(left_bound),
+            right_bound_(right_bound == -1 ? left_bound : right_bound) {
 
     }
 
@@ -83,24 +84,20 @@ namespace graph_constraint_solver {
         return clone_constraint<SizeConstraint>(*this);
     }
 
-    int SizeConstraint::size() {
-        return size_;
-    }
-
     ConstraintSatisfactionVerdict SizeConstraint::check() {
         return check(graph_ptr_);
     }
 
     ConstraintSatisfactionVerdict SizeConstraint::check(GraphPtr graph_ptr) {
-        if (graph_ptr->size() > size_) return kImpossible;
-        if (graph_ptr->size() < size_) return kPossible;
+        if (graph_ptr->size() > right_bound_) return kImpossible;
+        if (graph_ptr->size() < left_bound_) return kPossible;
         return kOK;
     }
 
     // TreeConstraint
 
-    TreeConstraint::TreeConstraint()
-        : Constraint(kTree), latest_connected_vertex_(0) {
+    TreeConstraint::TreeConstraint(int weight)
+        : Constraint(kTree), weight_(weight), latest_connected_vertex_(0) {
 
     }
 
@@ -110,7 +107,7 @@ namespace graph_constraint_solver {
 
     std::pair<int, int> TreeConstraint::recommend_directed_edge() {
         // TODO: check for latest_connected_vertex_ == n - 1
-        return {Random::next(latest_connected_vertex_ + 1), latest_connected_vertex_ + 1};
+        return {random.wnext(latest_connected_vertex_ + 1, weight_), latest_connected_vertex_ + 1};
     }
 
     std::pair<int, int> TreeConstraint::recommend_undirected_edge() {
@@ -227,8 +224,7 @@ namespace graph_constraint_solver {
         : Constraint(kNone), important_constraints_(other.important_constraints_) {
 
         for (auto &c : other.constraints_) {
-//            auto tmp = *c.second;
-            constraints_[c.first] = c.second->clone();//std::make_shared<Constraint>(*c.second->template clone());
+            constraints_[c.first] = c.second->clone();
         }
     }
 

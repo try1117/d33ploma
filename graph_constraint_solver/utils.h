@@ -8,12 +8,20 @@
 
 namespace graph_constraint_solver {
 
+    // TODO: may be just use testlib.h for random stuff
     class Random {
     public:
-        static int next(int n);
+        Random();
+        double next();
+        int next(int n);
+        int next(int l, int r);
+        // function from testlib
+        int wnext(int n, int weight);
     private:
-        Random() {}
+        std::mt19937 rng;
     };
+
+    extern Random random;
 
     double timeit(std::function<void()> f);
 }

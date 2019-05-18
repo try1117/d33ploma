@@ -65,19 +65,19 @@ namespace graph_constraint_solver {
 
     class SizeConstraint : public Constraint {
     public:
-        explicit SizeConstraint(int size);
+        SizeConstraint(int left_bound, int right_bound = -1);
         ConstraintPtr clone() override;
-        int size();
         ConstraintSatisfactionVerdict check() override;
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
 
     private:
-        int size_;
+        int left_bound_;
+        int right_bound_;
     };
 
     class TreeConstraint : public Constraint {
     public:
-        TreeConstraint();
+        TreeConstraint(int weight = 0);
         ConstraintPtr clone() override;
 //        void bind_graph(GraphPtr graph_ptr);
 
@@ -90,6 +90,7 @@ namespace graph_constraint_solver {
         ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
 
     private:
+        int weight_;
         int latest_connected_vertex_;
     };
 

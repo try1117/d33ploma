@@ -10,17 +10,17 @@
 
 int main() {
 
-    int order = 20;
-    int size = 21;
+    int order = 200;
+    std::pair<int, int> size = {200, 250};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();
 
     constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
-    constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size));
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size.first, size.second));
 
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::TreeConstraint>());
-    constraints->add_constraint(std::make_shared<graph_constraint_solver::BridgeConstraint>(2, 3));
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::BridgeConstraint>(50, 60));
 
     std::pair<int, int> bridges_cnt;
     std::set<std::pair<int, int>> bridges_list;

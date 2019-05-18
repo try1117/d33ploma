@@ -41,15 +41,15 @@ namespace graph_constraint_solver {
     }
 
     std::pair<int, int> Graph::generate_random_directed_edge() {
-        int u = Random::next(order_);
+        int u = random.next(order_);
         while (g_[u].size() == order_) {
-            u = Random::next(order_);
+            u = random.next(order_);
 //            ++edge_pick_iterations;
         }
 
-        int v = Random::next(order_);
+        int v = random.next(order_);
         while (ma_[u][v]) {
-            v = Random::next(order_);
+            v = random.next(order_);
 //            ++edge_pick_iterations;
         }
         return {u, v};
