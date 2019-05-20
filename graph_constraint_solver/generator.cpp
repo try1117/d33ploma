@@ -9,7 +9,7 @@
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
-        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(kOrder)->order();
+        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(ConstraintType::kOrder)->order();
         return generate_single_component(order, constraint_list_ptr);
     }
 
@@ -25,7 +25,7 @@ namespace graph_constraint_solver {
         for (int outer = 0; outer < outer_iterations; ++outer) {
 
             auto initial_graph_ptr = initial_graph_generator();
-            if (initial_graph_ptr->check() == kOK) {
+            if (initial_graph_ptr->check() == ConstraintSatisfactionVerdict::kOK) {
                 return initial_graph_ptr;
             }
 
@@ -42,7 +42,7 @@ namespace graph_constraint_solver {
                     ++total_inner_true_iterations;
                     go_next(g);
                     auto constraint_verdict = g->check();
-                    if (constraint_verdict == kOK) {
+                    if (constraint_verdict == ConstraintSatisfactionVerdict::kOK) {
                         if (to_print) {
                             std::cout << "Outer           : " << outer + 1 << std::endl;
                             std::cout << "Inner last      : " << inner + 1 << std::endl;
@@ -53,7 +53,7 @@ namespace graph_constraint_solver {
                         }
                         return g;
                     }
-                    if (constraint_verdict == kPossible) {
+                    if (constraint_verdict == ConstraintSatisfactionVerdict::kPossible) {
                         graphs_nxt.push_back(g);
                     }
                 }
@@ -77,25 +77,25 @@ namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate_tree(int order, ConstraintListPtr constraint_list_ptr) {
         bool remove_tree_constraint = false;
-        if (!constraint_list_ptr->has_constraint(kTree)) {
+        if (!constraint_list_ptr->has_constraint(ConstraintType::kTree)) {
             constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>(random.next(-10, 10)));
             remove_tree_constraint = true;
         }
-        constraint_list_ptr->add_goal_constraint(kTree);
+        constraint_list_ptr->add_goal_constraint(ConstraintType::kTree);
 
         auto empty_graph_generator = [&]() -> ConstrainedGraphPtr {
             return std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order));
         };
         auto go_build_tree = [](ConstrainedGraphPtr g) {
-            auto edge = g->constraint_list_ptr()->template get_constraint<TreeConstraint>(kTree)->recommend_undirected_edge();
+            auto edge = g->constraint_list_ptr()->template get_constraint<TreeConstraint>(ConstraintType::kTree)->recommend_undirected_edge();
             g->add_undirected_edge(edge.first, edge.second);
         };
 
         auto tree = go_with_the_winners(empty_graph_generator, go_build_tree);
         if (remove_tree_constraint) {
-            tree->constraint_list_ptr()->remove_constraint(kTree);
+            tree->constraint_list_ptr()->remove_constraint(ConstraintType::kTree);
         }
-        tree->constraint_list_ptr()->remove_goal_constraint(kTree);
+        tree->constraint_list_ptr()->remove_goal_constraint(ConstraintType::kTree);
         return tree;
     }
 

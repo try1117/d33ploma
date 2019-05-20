@@ -50,7 +50,7 @@ namespace graph_constraint_solver {
     // OrderConstraint
 
     OrderConstraint::OrderConstraint(int order)
-        : Constraint(kOrder), order_(order) {
+        : Constraint(ConstraintType::kOrder), order_(order) {
 
     }
 
@@ -68,14 +68,14 @@ namespace graph_constraint_solver {
 
     ConstraintSatisfactionVerdict OrderConstraint::check(GraphPtr graph_ptr) {
         // TODO: think about possible gradual change of graph_ptr->order()
-        if (graph_ptr->order() == order_) return kOK;
-        return kImpossible;
+        if (graph_ptr->order() == order_) return ConstraintSatisfactionVerdict::kOK;
+        return ConstraintSatisfactionVerdict::kImpossible;
     }
 
     // SizeConstraint
 
     SizeConstraint::SizeConstraint(int left_bound, int right_bound)
-            : Constraint(kSize), left_bound_(left_bound),
+            : Constraint(ConstraintType::kSize), left_bound_(left_bound),
             right_bound_(right_bound == -1 ? left_bound : right_bound) {
 
     }
@@ -89,15 +89,15 @@ namespace graph_constraint_solver {
     }
 
     ConstraintSatisfactionVerdict SizeConstraint::check(GraphPtr graph_ptr) {
-        if (graph_ptr->size() > right_bound_) return kImpossible;
-        if (graph_ptr->size() < left_bound_) return kPossible;
-        return kOK;
+        if (graph_ptr->size() > right_bound_) return ConstraintSatisfactionVerdict::kImpossible;
+        if (graph_ptr->size() < left_bound_) return ConstraintSatisfactionVerdict::kPossible;
+        return ConstraintSatisfactionVerdict::kOK;
     }
 
     // TreeConstraint
 
     TreeConstraint::TreeConstraint(int weight)
-        : Constraint(kTree), weight_(weight), latest_connected_vertex_(0) {
+        : Constraint(ConstraintType::kTree), weight_(weight), latest_connected_vertex_(0) {
 
     }
 
@@ -124,14 +124,14 @@ namespace graph_constraint_solver {
     }
 
     ConstraintSatisfactionVerdict TreeConstraint::check() {
-        if (latest_connected_vertex_ > graph_ptr_->order() - 1) return kImpossible;
-        if (latest_connected_vertex_ < graph_ptr_->order() - 1) return kPossible;
-        return kOK;
+        if (latest_connected_vertex_ > graph_ptr_->order() - 1) return ConstraintSatisfactionVerdict::kImpossible;
+        if (latest_connected_vertex_ < graph_ptr_->order() - 1) return ConstraintSatisfactionVerdict::kPossible;
+        return ConstraintSatisfactionVerdict::kOK;
     }
 
     ConstraintSatisfactionVerdict TreeConstraint::check(GraphPtr g) {
         // TODO: check whether given graph is a tree or not
-        return kImpossible;
+        return ConstraintSatisfactionVerdict::kImpossible;
     }
 
 //    void BridgeConstraint::add_directed_edge(int from, int to) {
@@ -141,7 +141,7 @@ namespace graph_constraint_solver {
     // BridgeConstraint
 
     BridgeConstraint::BridgeConstraint(int left_bound, int right_bound)
-        : Constraint(kBridge), left_bound_(left_bound), right_bound_(right_bound) {
+        : Constraint(ConstraintType::kBridge), left_bound_(left_bound), right_bound_(right_bound) {
 
     }
 
@@ -163,12 +163,12 @@ namespace graph_constraint_solver {
         // TODO: think about it
         // do not count bridges when graph is not even tree
         if (graph_ptr->size() < graph_ptr->order() - 1) {
-            return kOK;
+            return ConstraintSatisfactionVerdict::kOK;
         }
         auto t = count_bridges(graph_ptr);
-        if (t.first < left_bound_) return kImpossible;
-        if (t.first > right_bound_) return kPossible;
-        return kOK;
+        if (t.first < left_bound_) return ConstraintSatisfactionVerdict::kImpossible;
+        if (t.first > right_bound_) return ConstraintSatisfactionVerdict::kPossible;
+        return ConstraintSatisfactionVerdict::kOK;
     }
 
     int BridgeConstraint::_count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges) {
@@ -211,7 +211,7 @@ namespace graph_constraint_solver {
     // ConstraintList
 
     ConstraintList::ConstraintList()
-        : Constraint(kNone) {
+        : Constraint(ConstraintType::kNone) {
 
     }
 
@@ -221,7 +221,7 @@ namespace graph_constraint_solver {
     }
 
     ConstraintList::ConstraintList(ConstraintList &other)
-        : Constraint(kNone), important_constraints_(other.important_constraints_) {
+        : Constraint(ConstraintType::kNone), important_constraints_(other.important_constraints_) {
 
         for (auto &c : other.constraints_) {
             constraints_[c.first] = c.second->clone();
@@ -273,38 +273,38 @@ namespace graph_constraint_solver {
     }
 
     ConstraintSatisfactionVerdict ConstraintList::check() {
-        ConstraintSatisfactionVerdict res = kOK;
+        ConstraintSatisfactionVerdict res = ConstraintSatisfactionVerdict::kOK;
         for (auto &c : constraints_) {
             res = std::min(res, c.second->check());
         }
         auto res_goals = check_goals();
-        if (res_goals == kOK && res >= kPossible) {
-            return kOK;
+        if (res_goals == ConstraintSatisfactionVerdict::kOK && res >= ConstraintSatisfactionVerdict::kPossible) {
+            return ConstraintSatisfactionVerdict::kOK;
         }
         return res;
     }
 
     ConstraintSatisfactionVerdict ConstraintList::check(GraphPtr graph_ptr) {
-        ConstraintSatisfactionVerdict res = kOK;
+        ConstraintSatisfactionVerdict res = ConstraintSatisfactionVerdict::kOK;
         for (auto &c : constraints_) {
             res = std::min(res, c.second->check(graph_ptr));
         }
         auto res_goals = check_goals(graph_ptr);
-        if (res_goals == kOK && res >= kPossible) {
-            return kOK;
+        if (res_goals == ConstraintSatisfactionVerdict::kOK && res >= ConstraintSatisfactionVerdict::kPossible) {
+            return ConstraintSatisfactionVerdict::kOK;
         }
         return res;
     }
 
     ConstraintSatisfactionVerdict ConstraintList::check_goals() {
         if (!important_constraints_.empty()) {
-            ConstraintSatisfactionVerdict res = kOK;
+            ConstraintSatisfactionVerdict res = ConstraintSatisfactionVerdict::kOK;
             for (auto imporant : important_constraints_) {
                 res = std::min(res, constraints_[imporant]->check());
             }
             return res;
         }
-        return kPossible;
+        return ConstraintSatisfactionVerdict::kPossible;
     }
 
     ConstraintSatisfactionVerdict ConstraintList::check_goals(GraphPtr graph_ptr) {
@@ -312,12 +312,12 @@ namespace graph_constraint_solver {
         // may be change arguments in check functions (default = nullptr???)
         // alert copy-paste
         if (!important_constraints_.empty()) {
-            ConstraintSatisfactionVerdict res = kOK;
+            ConstraintSatisfactionVerdict res = ConstraintSatisfactionVerdict::kOK;
             for (auto imporant : important_constraints_) {
                 res = std::min(res, constraints_[imporant]->check(graph_ptr));
             }
             return res;
         }
-        return kPossible;
+        return ConstraintSatisfactionVerdict::kPossible;
     }
 }

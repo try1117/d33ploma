@@ -10,13 +10,13 @@
 
 namespace graph_constraint_solver {
 
-    enum ConstraintSatisfactionVerdict : unsigned char {
+    enum class ConstraintSatisfactionVerdict : unsigned char {
             kImpossible = 0,
             kPossible = 1,
             kOK = 2,
     };
 
-    enum ConstraintType : unsigned char {
+    enum class ConstraintType : unsigned char {
         kNone,
         kOrder,
         kSize,
