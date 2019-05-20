@@ -9,8 +9,57 @@
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
+        // TODO: default values
+        auto graph_type = constraint_list_ptr->template get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->graph_type();
         auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->order();
-        return generate_single_component(order, constraint_list_ptr);
+        auto components_number_bounds = constraint_list_ptr->template get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
+        return generate_components(graph_type, order, components_number_bounds, constraint_list_ptr);
+    }
+
+    std::vector<int> generate_n_numbers(int n, int sum, std::function<bool(std::vector<int>&)> check) {
+        std::vector<int> result;
+        int minimal_size = 1;
+        for (int i = 0; i < n - 1; ++i) {
+            result.push_back(random.next(minimal_size, sum - minimal_size * (n - i - 1)));
+            sum -= result.back();
+        }
+        result.push_back(sum);
+        return result;
+    }
+
+    // Генерация компонент как отдельных графов вызывает сложности с глобальными ограничениями ...
+    // Надо подумать как лучше этого избежать
+
+    ConstrainedGraphPtr Generator::generate_components(Graph::Type graph_type, int order, std::pair<int, int> components_number_bounds,
+            ConstraintListPtr constraint_list_ptr) {
+
+        // TODO: at least some crude check
+        auto check = [](std::vector<int> &orders) {
+            return true;
+        };
+
+        while (true) {
+            auto components_number = random.next(components_number_bounds);
+            auto components_orders = generate_n_numbers(components_number, order, check);
+            ConstrainedGraphPtr result = std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order, graph_type));
+            bool success = true;
+            for (auto component_order : components_orders) {
+                ConstraintListPtr component_constraint_list = std::static_pointer_cast<ConstraintList>(constraint_list_ptr->clone());
+                component_constraint_list->add_constraint(std::make_shared<OrderConstraint>(component_order));
+                component_constraint_list->add_constraint(std::make_shared<ComponentsNumberConstraint>(1));
+                auto component = generate_single_component(component_constraint_list);
+                if (component->empty()) {
+                    success = false;
+                    break;
+                }
+                result->append_graph(component->graph_ptr());
+            }
+            if (success) {
+                break;
+            }
+            return result;
+        }
+        return std::make_shared<ConstrainedGraph>();
     }
 
     ConstrainedGraphPtr Generator::go_with_the_winners(GraphGenerator initial_graph_generator, GoNext go_next, bool to_print,
@@ -99,7 +148,9 @@ namespace graph_constraint_solver {
         return tree;
     }
 
-    ConstrainedGraphPtr Generator::generate_single_component(int order, ConstraintListPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::generate_single_component(ConstraintListPtr constraint_list_ptr) {
+
+        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->order();
 
         auto tree_generator = [&]() -> ConstrainedGraphPtr {
             return generate_tree(order, constraint_list_ptr);

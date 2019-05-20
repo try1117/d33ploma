@@ -20,6 +20,10 @@ namespace graph_constraint_solver {
         return std::uniform_int_distribution<>(l, r)(rng);
     }
 
+    int Random::next(std::pair<int, int> bounds) {
+        return next(bounds.first, bounds.second);
+    }
+
     int Random::wnext(int n, int weight) {
         if (weight == 0) {
             return next(n);

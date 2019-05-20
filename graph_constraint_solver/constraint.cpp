@@ -12,6 +12,18 @@ namespace graph_constraint_solver {
         return result;
     }
 
+    Constraint::SatisfactionVerdict lies_in_between(int left_bound, int value, int right_bound, bool increasing = true) {
+        if (value > right_bound) {
+            if (increasing) return Constraint::SatisfactionVerdict::kImpossible;
+            return Constraint::SatisfactionVerdict::kPossible;
+        }
+        if (value < left_bound) {
+            if (increasing) return Constraint::SatisfactionVerdict::kPossible;
+            return Constraint::SatisfactionVerdict::kImpossible;
+        }
+        return Constraint::SatisfactionVerdict::kOK;
+    }
+
     // Constraint
 
     Constraint::Constraint(Type type)
@@ -76,8 +88,7 @@ namespace graph_constraint_solver {
 
     Constraint::SatisfactionVerdict OrderConstraint::check() {
         // TODO: think about possible gradual change of graph_ptr->order()
-        if (graph_ptr_->order() == order_) return SatisfactionVerdict::kOK;
-        return SatisfactionVerdict::kImpossible;
+        return lies_in_between(order_, graph_ptr_->order(), order_);
     }
 
     // SizeConstraint
@@ -93,9 +104,29 @@ namespace graph_constraint_solver {
     }
 
     Constraint::SatisfactionVerdict SizeConstraint::check() {
-        if (graph_ptr_->size() > right_bound_) return SatisfactionVerdict::kImpossible;
-        if (graph_ptr_->size() < left_bound_) return SatisfactionVerdict::kPossible;
-        return SatisfactionVerdict::kOK;
+        return lies_in_between(left_bound_, graph_ptr_->size(), right_bound_);
+    }
+
+    // ComponentsNumberConstraint
+
+    ComponentsNumberConstraint::ComponentsNumberConstraint(int left_bound, int right_bound)
+        : Constraint(Type::kComponentsNumber), left_bound_(left_bound),
+        right_bound_(right_bound == -1 ? left_bound : right_bound) {
+
+    }
+
+    ConstraintPtr ComponentsNumberConstraint::clone() {
+        return clone_constraint<ComponentsNumberConstraint>(*this);
+    }
+
+    Constraint::SatisfactionVerdict ComponentsNumberConstraint::check() {
+        // TODO: count components_number
+        int components_number = 0;
+        return lies_in_between(left_bound_, components_number, right_bound_);
+    }
+
+    std::pair<int, int> ComponentsNumberConstraint::bounds() {
+        return {left_bound_, right_bound_};
     }
 
     // TreeConstraint
@@ -119,9 +150,8 @@ namespace graph_constraint_solver {
     }
 
     Constraint::SatisfactionVerdict TreeConstraint::check() {
-        if (latest_connected_vertex_ > graph_ptr_->order() - 1) return SatisfactionVerdict::kImpossible;
-        if (latest_connected_vertex_ < graph_ptr_->order() - 1) return SatisfactionVerdict::kPossible;
-        return SatisfactionVerdict::kOK;
+        auto t = graph_ptr_->order() - 1;
+        return lies_in_between(t, latest_connected_vertex_, t);
     }
 
 //    void BridgeConstraint::add_directed_edge(int from, int to) {
@@ -152,9 +182,7 @@ namespace graph_constraint_solver {
             return SatisfactionVerdict::kOK;
         }
         auto t = count_bridges(graph_ptr_);
-        if (t.first < left_bound_) return SatisfactionVerdict::kImpossible;
-        if (t.first > right_bound_) return SatisfactionVerdict::kPossible;
-        return SatisfactionVerdict::kOK;
+        return lies_in_between(left_bound_, t.first, right_bound_, false);
     }
 
     int BridgeConstraint::_count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges) {
@@ -201,7 +229,6 @@ namespace graph_constraint_solver {
 
     }
 
-    // do nothing
     ConstraintPtr ConstraintList::clone() {
         return clone_constraint<ConstraintList>(*this);
     }

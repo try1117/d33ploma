@@ -33,6 +33,10 @@ namespace graph_constraint_solver {
         return graph_ptr_ == nullptr || graph_ptr_->empty();
     }
 
+    void ConstrainedGraph::append_graph(GraphPtr other) {
+        graph_ptr_->append_graph(other);
+    }
+
     void ConstrainedGraph::add_edge(int from, int to) {
         for (auto &c : constraint_list_ptr_->constraints()) {
             c.second->add_edge(from, to);

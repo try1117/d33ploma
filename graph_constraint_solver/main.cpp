@@ -9,8 +9,9 @@
 // TODO: const GraphPtr ...
 
 int main() {
-    int order = 200;
-    std::pair<int, int> size = {200, 250};
+    int order = 100;
+    std::pair<int, int> size = {100, 150};
+    std::pair<int, int> components_number = {1, 1};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();
@@ -18,6 +19,8 @@ int main() {
     constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size.first, size.second));
+
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsNumberConstraint>(components_number.first, components_number.second));
 
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::TreeConstraint>());
     constraints->add_constraint(std::make_shared<graph_constraint_solver::BridgeConstraint>(50, 60));

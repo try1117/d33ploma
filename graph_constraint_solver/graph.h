@@ -7,6 +7,9 @@
 
 namespace graph_constraint_solver {
 
+    class Graph;
+    using GraphPtr = std::shared_ptr<Graph>;
+
     // TODO: directed/undirected graph
     // in future think about using boost::graph or something like that
     // now it is primarily undirected graph
@@ -31,6 +34,8 @@ namespace graph_constraint_solver {
         void add_edge(int u, int v);
         std::pair<int, int> generate_random_edge();
 
+        void append_graph(GraphPtr other);
+
     private:
         void add_undirected_edge(int u, int v);
         void add_directed_edge(int u, int v);
@@ -41,11 +46,10 @@ namespace graph_constraint_solver {
         Type type_;
         int order_;
         int size_;
+        int greatest_used_vertex_index_;
         std::vector<std::vector<int>> g_;
         std::vector<std::vector<bool>> ma_;
     };
-
-    using GraphPtr = std::shared_ptr<Graph>;
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_GRAPH_H

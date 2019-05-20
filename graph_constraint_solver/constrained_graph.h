@@ -19,6 +19,8 @@ namespace graph_constraint_solver {
         void add_edge(int from, int to);
         void add_random_edge();
         bool empty();
+        void append_graph(GraphPtr other);
+
         Constraint::SatisfactionVerdict check();
 
     private:

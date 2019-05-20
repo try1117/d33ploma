@@ -27,6 +27,7 @@ namespace graph_constraint_solver {
             kGraphType,
             kOrder,
             kSize,
+            kComponentsNumber,
             kTree,
             kBridge,
         };
@@ -82,6 +83,19 @@ namespace graph_constraint_solver {
         int right_bound_;
     };
 
+    class ComponentsNumberConstraint : public Constraint {
+    public:
+        ComponentsNumberConstraint(int left_bound, int right_bound = -1);
+        ConstraintPtr clone() override;
+        SatisfactionVerdict check();
+        std::pair<int, int> bounds();
+
+    private:
+        int left_bound_;
+        int right_bound_;
+    };
+
+    // TODO: real tree constraint (dsu or something)
     class TreeConstraint : public Constraint {
     public:
         explicit TreeConstraint(int weight = 0);

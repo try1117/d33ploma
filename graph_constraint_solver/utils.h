@@ -15,6 +15,7 @@ namespace graph_constraint_solver {
         double next();
         int next(int n);
         int next(int l, int r);
+        int next(std::pair<int, int> bounds);
         // function from testlib
         int wnext(int n, int weight);
     private:

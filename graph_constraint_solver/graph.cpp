@@ -5,6 +5,7 @@
 namespace graph_constraint_solver {
     Graph::Graph(int order, Graph::Type type)
         : type_(type), order_(order), size_(0),
+        greatest_used_vertex_index_(-1),
         g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
 
     }
@@ -34,6 +35,7 @@ namespace graph_constraint_solver {
     }
 
     void Graph::add_edge(int u, int v) {
+        greatest_used_vertex_index_ = std::max(greatest_used_vertex_index_, std::max(u, v));
         if (type_ == Type::kDirected) {
             add_directed_edge(u, v);
         }
@@ -48,6 +50,23 @@ namespace graph_constraint_solver {
         }
         if (type_ == Type::kUndirected) {
             return generate_random_undirected_edge();
+        }
+    }
+
+    void Graph::append_graph(GraphPtr other) {
+        // TODO: exception?
+        if (greatest_used_vertex_index_ + other->order() == order_) {
+            throw std::exception();
+        }
+        int base = greatest_used_vertex_index_ + 1;
+        greatest_used_vertex_index_ += other->order();
+
+        auto adj_list = other->adjacency_list();
+        for (int i = 0; i < other->order(); ++i) {
+            g_[base + i] = adj_list[i];
+            for (auto edge : adj_list[i]) {
+                ma_[base + i][base + edge] = true;
+            }
         }
     }
 
