@@ -10,45 +10,54 @@
 
 namespace graph_constraint_solver {
 
-    enum class ConstraintSatisfactionVerdict : unsigned char {
-            kImpossible = 0,
-            kPossible = 1,
-            kOK = 2,
-    };
-
-    enum class ConstraintType : unsigned char {
-        kNone,
-        kOrder,
-        kSize,
-        kTree,
-        kBridge,
-    };
-
     class Constraint;
     using ConstraintPtr = std::shared_ptr<Constraint>;
 
-    // TODO: store version and last ConstraintSatisfactionVerdict
+    // TODO: store version and last Constraint::SatisfactionVerdict
     class Constraint {
     public:
-        explicit Constraint(ConstraintType type);
+        enum class SatisfactionVerdict : unsigned char {
+            kImpossible = 0,
+            kPossible = 1,
+            kOK = 2,
+        };
+
+        enum class Type : unsigned char {
+            kNone,
+            kGraphType,
+            kOrder,
+            kSize,
+            kTree,
+            kBridge,
+        };
+
+        explicit Constraint(Type type);
         virtual ConstraintPtr clone() = 0;
 
-        ConstraintType type();
+        Type type();
         GraphPtr graph_ptr();
         virtual void bind_graph(GraphPtr graph_ptr);
 
         // TODO: return Edge type instead of std::pair<int, int>
-        virtual void add_directed_edge(int from, int to);
-        virtual void add_undirected_edge(int from, int to);
-        virtual std::pair<int, int> recommend_directed_edge();
-        virtual std::pair<int, int> recommend_undirected_edge();
+        virtual void add_edge(int from, int to);
+        virtual std::pair<int, int> recommend_edge();
 
-        virtual ConstraintSatisfactionVerdict check() = 0;
-        virtual ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) = 0;
+        virtual SatisfactionVerdict check() = 0;
 
     protected:
         GraphPtr graph_ptr_;
-        ConstraintType type_;
+        Type type_;
+    };
+
+    class GraphTypeConstraint : public Constraint {
+    public:
+        explicit GraphTypeConstraint(Graph::Type graph_type);
+        ConstraintPtr clone() override;
+        Graph::Type graph_type();
+        SatisfactionVerdict check() override;
+
+    private:
+        Graph::Type graph_type_;
     };
 
     class OrderConstraint : public Constraint {
@@ -56,8 +65,7 @@ namespace graph_constraint_solver {
         explicit OrderConstraint(int order);
         ConstraintPtr clone() override;
         int order();
-        ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+        SatisfactionVerdict check();
 
     private:
         int order_;
@@ -67,8 +75,7 @@ namespace graph_constraint_solver {
     public:
         SizeConstraint(int left_bound, int right_bound = -1);
         ConstraintPtr clone() override;
-        ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+        SatisfactionVerdict check();
 
     private:
         int left_bound_;
@@ -77,17 +84,14 @@ namespace graph_constraint_solver {
 
     class TreeConstraint : public Constraint {
     public:
-        TreeConstraint(int weight = 0);
+        explicit TreeConstraint(int weight = 0);
         ConstraintPtr clone() override;
 //        void bind_graph(GraphPtr graph_ptr);
 
-        void add_directed_edge(int from, int to) override;
-        void add_undirected_edge(int from, int to) override;
-        std::pair<int, int> recommend_directed_edge() override;
-        std::pair<int, int> recommend_undirected_edge() override;
+        void add_edge(int from, int to) override;
+        std::pair<int, int> recommend_edge() override;
 
-        ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+        SatisfactionVerdict check() override;
 
     private:
         int weight_;
@@ -99,9 +103,8 @@ namespace graph_constraint_solver {
         BridgeConstraint(int left_bound, int right_bound);
         ConstraintPtr clone() override;
         void bind_graph(GraphPtr graph_ptr) override;
-//        void add_directed_edge(int from, int to) override;
-        ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr g) override;
+//        void add_edge(int from, int to) override;
+        SatisfactionVerdict check();
 
         std::pair<int, int> count_bridges(GraphPtr graph_ptr, bool save_bridges = false);
         std::set<std::pair<int, int>> get_bridges_list();
@@ -123,41 +126,38 @@ namespace graph_constraint_solver {
 
         void bind_graph(GraphPtr graph_ptr) override;
 
-        std::map<ConstraintType, ConstraintPtr> constraints();
-        bool has_constraint(ConstraintType constraint_type);
+        std::map<Type, ConstraintPtr> constraints();
+        bool has_constraint(Type constraint_type);
 
         void add_constraint(ConstraintPtr constraint_ptr);
-        void remove_constraint(ConstraintType constraint_type);
+        void remove_constraint(Type constraint_type);
 
         template <typename T>
-        std::shared_ptr<T> get_constraint(ConstraintType constraint_type) {
+        std::shared_ptr<T> get_constraint(Type constraint_type) {
             if (has_constraint(constraint_type)) {
                 return std::static_pointer_cast<T>(constraints_.at(constraint_type));
             }
             return nullptr;
         }
 
-        void add_goal_constraint(ConstraintType constraint_type);
-        void remove_goal_constraint(ConstraintType constraint_type);
+        void add_goal_constraint(Type constraint_type);
+        void remove_goal_constraint(Type constraint_type);
 
-        void add_directed_edge(int, int) override;
-        void add_undirected_edge(int, int) override;
+        void add_edge(int, int) override;
 
-        ConstraintSatisfactionVerdict check() override;
-        ConstraintSatisfactionVerdict check(GraphPtr graph_ptr) override;
+        SatisfactionVerdict check();
 
         // TODO: parse
         void parse_JSON(std::string filepath) {}
         void parse_XML(std::string filepath) {}
 
     private:
-        // TODO: maybe we need std::map<ConstraintType, std::vector<ConstraintPtr>>
+        // TODO: maybe we need std::map<Constraint::Type, std::vector<ConstraintPtr>>
         // not sure now whether we'll have multiple constraints of the same type
-        std::map<ConstraintType, ConstraintPtr> constraints_;
-        std::set<ConstraintType> important_constraints_;
+        std::map<Type, ConstraintPtr> constraints_;
+        std::set<Type> important_constraints_;
 
-        ConstraintSatisfactionVerdict check_goals();
-        ConstraintSatisfactionVerdict check_goals(GraphPtr graph_ptr);
+        SatisfactionVerdict check_goals();
     };
 
     using ConstraintListPtr = std::shared_ptr<ConstraintList>;

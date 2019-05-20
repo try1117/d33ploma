@@ -33,42 +33,19 @@ namespace graph_constraint_solver {
         return graph_ptr_ == nullptr || graph_ptr_->empty();
     }
 
-    void ConstrainedGraph::add_directed_edge(int from, int to) {
+    void ConstrainedGraph::add_edge(int from, int to) {
         for (auto &c : constraint_list_ptr_->constraints()) {
-            c.second->add_directed_edge(from, to);
+            c.second->add_edge(from, to);
         }
-        graph_ptr_->add_directed_edge(from, to);
+        graph_ptr_->add_edge(from, to);
     }
 
-    void ConstrainedGraph::add_undirected_edge(int from, int to) {
-//        add_directed_edge(from, to);
-//        add_directed_edge(to, from);
-        for (auto &c : constraint_list_ptr_->constraints()) {
-            c.second->add_undirected_edge(from, to);
-        }
-        graph_ptr_->add_undirected_edge(from, to);
+    void ConstrainedGraph::add_random_edge() {
+        auto edge = graph_ptr_->generate_random_edge();
+        add_edge(edge.first, edge.second);
     }
 
-    void ConstrainedGraph::add_random_directed_edge() {
-        auto edge = graph_ptr_->generate_random_directed_edge();
-        add_directed_edge(edge.first, edge.second);
-    }
-
-    void ConstrainedGraph::add_random_undirected_edge() {
-        auto edge = graph_ptr_->generate_random_undirected_edge();
-        add_undirected_edge(edge.first, edge.second);
-    }
-
-    ConstraintSatisfactionVerdict ConstrainedGraph::check() {
+    Constraint::SatisfactionVerdict ConstrainedGraph::check() {
         return constraint_list_ptr_->check();
     }
-
-//    GraphPtr gen_rand_tree(int n) {
-//        GraphPtr tree(new Graph(n));
-//        for (int i = 1; i < n; ++i) {
-//            int parent = rng() % i;
-//            tree->add_undirected_edge(i, parent);
-//        }
-//        return tree;
-//    }
 }

@@ -15,9 +15,7 @@ int main() {
     graph_constraint_solver::ConstrainedGraphPtr g;
     graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();
 
-//    constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(
-//            graph_constraint_solver::
-//            ));
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size.first, size.second));
 
@@ -36,7 +34,7 @@ int main() {
             return -1;
         }
 
-        auto br_cons = constraints->get_constraint<graph_constraint_solver::BridgeConstraint>(graph_constraint_solver::ConstraintType::kBridge);
+        auto br_cons = constraints->get_constraint<graph_constraint_solver::BridgeConstraint>(graph_constraint_solver::Constraint::Type::kBridge);
         bridges_cnt = br_cons->count_bridges(g->graph_ptr(), true);
         bridges_list = br_cons->get_bridges_list();
     });

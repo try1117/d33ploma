@@ -12,7 +12,13 @@ namespace graph_constraint_solver {
     // now it is primarily undirected graph
     class Graph {
     public:
-        explicit Graph(int order = 0);
+        enum class Type : unsigned char {
+            kDirected,
+            kUndirected,
+        };
+
+        explicit Graph(int order = 0, Type graph_type = Type::kUndirected);
+        Type type();
         // number of vertices
         int order();
         // number of undirected edges
@@ -22,13 +28,17 @@ namespace graph_constraint_solver {
         bool empty();
         bool is_leaf(int v);
 
+        void add_edge(int u, int v);
+        std::pair<int, int> generate_random_edge();
+
+    private:
         void add_undirected_edge(int u, int v);
         void add_directed_edge(int u, int v);
 
         std::pair<int, int> generate_random_directed_edge();
         std::pair<int, int> generate_random_undirected_edge();
 
-    private:
+        Type type_;
         int order_;
         int size_;
         std::vector<std::vector<int>> g_;

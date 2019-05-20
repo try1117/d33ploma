@@ -3,10 +3,14 @@
 #include "utils.h"
 
 namespace graph_constraint_solver {
-    Graph::Graph(int order)
-        : order_(order), size_(0),
+    Graph::Graph(int order, Graph::Type type)
+        : type_(type), order_(order), size_(0),
         g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
 
+    }
+
+    Graph::Type Graph::type() {
+        return type_;
     }
 
     bool Graph::empty() {
@@ -27,6 +31,24 @@ namespace graph_constraint_solver {
 
     const std::vector<std::vector<int>>& Graph::adjacency_list() {
         return g_;
+    }
+
+    void Graph::add_edge(int u, int v) {
+        if (type_ == Type::kDirected) {
+            add_directed_edge(u, v);
+        }
+        if (type_ == Type::kUndirected) {
+            add_undirected_edge(u, v);
+        }
+    }
+
+    std::pair<int, int> Graph::generate_random_edge() {
+        if (type_ == Type::kDirected) {
+            return generate_random_directed_edge();
+        }
+        if (type_ == Type::kUndirected) {
+            return generate_random_undirected_edge();
+        }
     }
 
     void Graph::add_undirected_edge(int u, int v) {

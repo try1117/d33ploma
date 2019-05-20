@@ -16,12 +16,10 @@ namespace graph_constraint_solver {
         ConstraintListPtr constraint_list_ptr();
         GraphPtr graph_ptr();
 
-        void add_directed_edge(int from, int to);
-        void add_undirected_edge(int from, int to);
-        void add_random_directed_edge();
-        void add_random_undirected_edge();
+        void add_edge(int from, int to);
+        void add_random_edge();
         bool empty();
-        ConstraintSatisfactionVerdict check();
+        Constraint::SatisfactionVerdict check();
 
     private:
         GraphPtr graph_ptr_;
