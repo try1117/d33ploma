@@ -10,6 +10,7 @@ namespace graph_constraint_solver {
     class Graph;
     using GraphPtr = std::shared_ptr<Graph>;
 
+    // TODO: multi-edge and self-loops
     // TODO: directed/undirected graph
     // in future think about using boost::graph or something like that
     // now it is primarily undirected graph
@@ -20,7 +21,10 @@ namespace graph_constraint_solver {
             kUndirected,
         };
 
-        explicit Graph(int order = 0, Type graph_type = Type::kUndirected);
+        Graph(int order = 0, Type type = Type::kUndirected);
+        // TODO: edge type???
+        Graph(int order, Type type, std::vector<std::pair<int, int>> edges);
+
         Type type();
         // number of vertices
         int order();
@@ -46,6 +50,7 @@ namespace graph_constraint_solver {
         Type type_;
         int order_;
         int size_;
+        // TODO: do i really need this greatest_variable_ever ?
         int greatest_used_vertex_index_;
         std::vector<std::vector<int>> g_;
         std::vector<std::vector<bool>> ma_;

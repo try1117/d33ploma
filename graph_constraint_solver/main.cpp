@@ -9,9 +9,13 @@
 // TODO: const GraphPtr ...
 
 int main() {
-    int order = 100;
-    std::pair<int, int> size = {100, 150};
-    std::pair<int, int> components_number = {1, 1};
+//    int order = 25;
+//    std::pair<int, int> size = {25, 50};
+//    std::pair<int, int> components_number = {5, 5};
+
+    int order = 250;
+    std::pair<int, int> size = {250, 500};
+    std::pair<int, int> components_number = {10, 10};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();

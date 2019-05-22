@@ -4,8 +4,8 @@ namespace graph_constraint_solver {
     Random random = Random();
 
     Random::Random()
-        : rng(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
-//        : rng(123456) {
+//        : rng(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
+        : rng(123) {
     }
 
     double Random::next() {

@@ -10,6 +10,16 @@ namespace graph_constraint_solver {
 
     }
 
+    Graph::Graph(int order, Type type, std::vector<std::pair<int, int>> edges)
+        : type_(type), order_(order), size_(0),
+        greatest_used_vertex_index_(order - 1),
+        g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
+
+        for (auto &edge : edges) {
+            add_edge(edge.first, edge.second);
+        }
+    }
+
     Graph::Type Graph::type() {
         return type_;
     }

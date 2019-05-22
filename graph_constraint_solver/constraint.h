@@ -77,6 +77,7 @@ namespace graph_constraint_solver {
         SizeConstraint(int left_bound, int right_bound = -1);
         ConstraintPtr clone() override;
         SatisfactionVerdict check();
+        std::pair<int, int> bounds();
 
     private:
         int left_bound_;

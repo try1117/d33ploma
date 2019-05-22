@@ -107,6 +107,10 @@ namespace graph_constraint_solver {
         return lies_in_between(left_bound_, graph_ptr_->size(), right_bound_);
     }
 
+    std::pair<int, int> SizeConstraint::bounds() {
+        return {left_bound_, right_bound_};
+    }
+
     // ComponentsNumberConstraint
 
     ComponentsNumberConstraint::ComponentsNumberConstraint(int left_bound, int right_bound)
