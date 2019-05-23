@@ -1,5 +1,7 @@
 #include "constraint.h"
 
+#include <sys/resource.h>
+
 #include "utils.h"
 
 namespace graph_constraint_solver {
@@ -213,11 +215,32 @@ namespace graph_constraint_solver {
         }
     }
 
+    // from stackoverflow
+    // https://stackoverflow.com/questions/2275550/change-stack-size-for-a-c-application-in-linux-during-compilation-with-gnu-com/2284691#2284691
+    bool increase_stack_size() {
+        const rlim_t kStackSize = 64 * 1024 * 1024;
+        struct rlimit rl;
+        int result;
+
+        result = getrlimit(RLIMIT_STACK, &rl);
+        if (result == 0)
+        {
+            if (rl.rlim_cur < kStackSize)
+            {
+                rl.rlim_cur = kStackSize;
+                result = setrlimit(RLIMIT_STACK, &rl);
+                if (result != 0) return false;
+            }
+        }
+        return true;
+    }
+
     std::pair<int, int> BridgeConstraint::count_bridges(GraphPtr graph_ptr, bool save_bridges) {
         timer = 0;
         fill(tin.begin(), tin.end(), 0);
         fill(fup.begin(), fup.end(), 0);
         std::pair<int, int> res;
+        increase_stack_size();
         _count_bridges(graph_ptr, 0, -1, res, save_bridges);
         return res;
     }

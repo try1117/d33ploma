@@ -4,6 +4,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <set>
 
 namespace graph_constraint_solver {
 
@@ -53,7 +54,8 @@ namespace graph_constraint_solver {
         // TODO: do i really need this greatest_variable_ever ?
         int greatest_used_vertex_index_;
         std::vector<std::vector<int>> g_;
-        std::vector<std::vector<bool>> ma_;
+//        std::vector<std::vector<bool>> ma_;
+        std::set<std::pair<int, int>> ma_;
     };
 }
 

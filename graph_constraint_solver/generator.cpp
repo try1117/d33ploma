@@ -185,7 +185,7 @@ namespace graph_constraint_solver {
     }
 
     std::vector<std::pair<int, int>> Generator::generate_2connected_graph(int order, int size, int components_number) {
-        int minimal_order = 15;
+        int minimal_order = 3;
         auto get_large_component_order = [&](int order, int components_number) {
             return order - minimal_order * (components_number - 1);
         };
@@ -193,7 +193,7 @@ namespace graph_constraint_solver {
         auto get_edges_bounds = [&](int order, int components_number) {
             int min_size = order;
             int large_component = get_large_component_order(order, components_number);
-            int max_size = large_component * (large_component - 1) / 2 + 3 * (components_number - 1);
+            long long max_size = 1LL * large_component * (large_component - 1) / 2 + 3 * (components_number - 1);
             return std::make_pair(min_size, max_size);
         };
 
@@ -231,8 +231,8 @@ namespace graph_constraint_solver {
                 auto current_edges_bounds = get_edges_bounds(current_order, components_number - i);
                 auto next_edges_bounds = get_edges_bounds(next_order, components_number - i - 1);
 
-                int size_left_bound = std::max(component_order, current_size - next_edges_bounds.second);
-                int size_right_bound = std::min(component_order * (component_order - 1) / 2,
+                int size_left_bound = std::max<long long>(component_order, current_size - next_edges_bounds.second);
+                int size_right_bound = std::min<long long>(1LL * component_order * (component_order - 1) / 2,
                                                 current_size - next_edges_bounds.first);
 
                 if (size_left_bound > size_right_bound) {
@@ -277,7 +277,7 @@ namespace graph_constraint_solver {
 
     std::vector<std::pair<int, int>> Generator::generate_2connected_component(int order, int size) {
         std::vector<std::pair<int, int>> result;
-        if (order < 3 || size < order || size > order * (order - 1) / 2) {
+        if (order < 3 || size < order || size > 1LL * order * (order - 1) / 2) {
             return result;
         }
 

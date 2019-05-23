@@ -13,9 +13,13 @@ int main() {
 //    std::pair<int, int> size = {25, 50};
 //    std::pair<int, int> components_number = {5, 5};
 
-    int order = 250;
-    std::pair<int, int> size = {250, 500};
-    std::pair<int, int> components_number = {10, 10};
+//    int order = 250;
+//    std::pair<int, int> size = {250, 500};
+//    std::pair<int, int> components_number = {10, 10};
+
+    int order = 250000;
+    std::pair<int, int> size = {250000, 500000};
+    std::pair<int, int> components_number = {100, 200};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();
@@ -51,7 +55,7 @@ int main() {
         for (auto child : g->graph_ptr()->adjacency_list()[i]) {
             if (i <= child) {
 //                ++undirected_edges;
-                printf("g.add_edge(%d, %d, color='%s')\n", i, child, (bridges_list.count({i, child}) ? "red" : "blue"));
+//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, (bridges_list.count({i, child}) ? "red" : "blue"));
             }
         }
     }

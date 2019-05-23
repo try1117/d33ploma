@@ -6,14 +6,16 @@ namespace graph_constraint_solver {
     Graph::Graph(int order, Graph::Type type)
         : type_(type), order_(order), size_(0),
         greatest_used_vertex_index_(-1),
-        g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
+        g_(order, std::vector<int>()) {
+//        ma_(order, std::vector<bool>(order)) {
 
     }
 
     Graph::Graph(int order, Type type, std::vector<std::pair<int, int>> edges)
         : type_(type), order_(order), size_(0),
         greatest_used_vertex_index_(order - 1),
-        g_(order, std::vector<int>()), ma_(order, std::vector<bool>(order)) {
+        g_(order, std::vector<int>()) {
+//        ma_(order, std::vector<bool>(order)) {
 
         for (auto &edge : edges) {
             add_edge(edge.first, edge.second);
@@ -75,7 +77,8 @@ namespace graph_constraint_solver {
         for (int i = 0; i < other->order(); ++i) {
             g_[base + i] = adj_list[i];
             for (auto edge : adj_list[i]) {
-                ma_[base + i][base + edge] = true;
+                ma_.emplace(base + i, base + edge);
+//                ma_[base + i][base + edge] = true;
             }
         }
     }
@@ -88,7 +91,8 @@ namespace graph_constraint_solver {
 
     void Graph::add_directed_edge(int u, int v) {
         g_[u].emplace_back(v);
-        ma_[u][v] = true;
+        ma_.emplace(u, v);
+//        ma_[u][v] = true;
     }
 
     std::pair<int, int> Graph::generate_random_directed_edge() {
@@ -99,7 +103,7 @@ namespace graph_constraint_solver {
         }
 
         int v = random.next(order_);
-        while (ma_[u][v]) {
+        while (ma_.count({u, v})) {
             v = random.next(order_);
 //            ++edge_pick_iterations;
         }

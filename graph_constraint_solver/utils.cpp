@@ -5,7 +5,7 @@ namespace graph_constraint_solver {
 
     Random::Random()
 //        : rng(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
-        : rng(123) {
+        : rng(123456) {
     }
 
     double Random::next() {
