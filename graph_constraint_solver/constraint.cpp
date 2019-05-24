@@ -6,15 +6,9 @@
 
 namespace graph_constraint_solver {
 
-    template<typename T>
-    std::shared_ptr<T> clone_constraint(T &other) {
-//        auto other_t = std::static_pointer_cast<T>(other);
-        auto result = std::make_shared<T>(other);
-//        result->bind_graph(std::make_shared<Graph>(*other.graph_ptr()));
-        return result;
-    }
+    // Constraint
 
-    Constraint::SatisfactionVerdict lies_in_between(int left_bound, int value, int right_bound, bool increasing = true) {
+    Constraint::SatisfactionVerdict Constraint::lies_in_between(int left_bound, int value, int right_bound, bool increasing) {
         if (value > right_bound) {
             if (increasing) return Constraint::SatisfactionVerdict::kImpossible;
             return Constraint::SatisfactionVerdict::kPossible;
@@ -25,8 +19,6 @@ namespace graph_constraint_solver {
         }
         return Constraint::SatisfactionVerdict::kOK;
     }
-
-    // Constraint
 
     Constraint::Constraint(Type type)
         : type_(type), graph_ptr_(nullptr) {
@@ -61,7 +53,7 @@ namespace graph_constraint_solver {
     }
 
     ConstraintPtr GraphTypeConstraint::clone() {
-        return clone_constraint<GraphTypeConstraint>(*this);
+        return std::make_shared<GraphTypeConstraint>(*this);
     }
 
     Graph::Type GraphTypeConstraint::graph_type() {
@@ -75,64 +67,34 @@ namespace graph_constraint_solver {
 
     // OrderConstraint
 
-    OrderConstraint::OrderConstraint(int order)
-        : Constraint(Type::kOrder), order_(order) {
-
-    }
-
     ConstraintPtr OrderConstraint::clone() {
-        return clone_constraint<OrderConstraint>(*this);
+        return std::make_shared<OrderConstraint>(*this);
     }
 
-    int OrderConstraint::order() {
-        return order_;
-    }
-
-    Constraint::SatisfactionVerdict OrderConstraint::check() {
-        // TODO: think about possible gradual change of graph_ptr->order()
-        return lies_in_between(order_, graph_ptr_->order(), order_);
+    int OrderConstraint::value() {
+        return graph_ptr_->order();
     }
 
     // SizeConstraint
 
-    SizeConstraint::SizeConstraint(int left_bound, int right_bound)
-            : Constraint(Type::kSize), left_bound_(left_bound),
-            right_bound_(right_bound == -1 ? left_bound : right_bound) {
-
-    }
-
     ConstraintPtr SizeConstraint::clone() {
-        return clone_constraint<SizeConstraint>(*this);
+        return std::make_shared<SizeConstraint>(*this);
     }
 
-    Constraint::SatisfactionVerdict SizeConstraint::check() {
-        return lies_in_between(left_bound_, graph_ptr_->size(), right_bound_);
-    }
-
-    std::pair<int, int> SizeConstraint::bounds() {
-        return {left_bound_, right_bound_};
+    int SizeConstraint::value() {
+        return graph_ptr_->size();
     }
 
     // ComponentsNumberConstraint
 
-    ComponentsNumberConstraint::ComponentsNumberConstraint(int left_bound, int right_bound)
-        : Constraint(Type::kComponentsNumber), left_bound_(left_bound),
-        right_bound_(right_bound == -1 ? left_bound : right_bound) {
-
-    }
-
     ConstraintPtr ComponentsNumberConstraint::clone() {
-        return clone_constraint<ComponentsNumberConstraint>(*this);
+        return std::make_shared<ComponentsNumberConstraint>(*this);
     }
 
-    Constraint::SatisfactionVerdict ComponentsNumberConstraint::check() {
+    int ComponentsNumberConstraint::value() {
         // TODO: count components_number
         int components_number = 0;
-        return lies_in_between(left_bound_, components_number, right_bound_);
-    }
-
-    std::pair<int, int> ComponentsNumberConstraint::bounds() {
-        return {left_bound_, right_bound_};
+        return components_number;
     }
 
     // TreeConstraint
@@ -143,7 +105,7 @@ namespace graph_constraint_solver {
     }
 
     ConstraintPtr TreeConstraint::clone() {
-        return clone_constraint<TreeConstraint>(*this);
+        return std::make_shared<TreeConstraint>(*this);
     }
 
     std::pair<int, int> TreeConstraint::recommend_edge() {
@@ -172,7 +134,7 @@ namespace graph_constraint_solver {
     }
 
     ConstraintPtr BridgeConstraint::clone() {
-        return clone_constraint<BridgeConstraint>(*this);
+        return std::make_shared<BridgeConstraint>(*this);
     }
 
     void BridgeConstraint::bind_graph(GraphPtr graph_ptr) {
@@ -247,85 +209,5 @@ namespace graph_constraint_solver {
 
     std::set<std::pair<int, int>> BridgeConstraint::get_bridges_list() {
         return bridges_list_;
-    }
-
-    // ConstraintList
-
-    ConstraintList::ConstraintList()
-        : Constraint(Type::kNone) {
-
-    }
-
-    ConstraintPtr ConstraintList::clone() {
-        return clone_constraint<ConstraintList>(*this);
-    }
-
-    ConstraintList::ConstraintList(ConstraintList &other)
-        : Constraint(Type::kNone), important_constraints_(other.important_constraints_) {
-
-        for (auto &c : other.constraints_) {
-            constraints_[c.first] = c.second->clone();
-        }
-    }
-
-    bool ConstraintList::has_constraint(Type constraint_type) {
-        return constraints_.count(constraint_type);
-    }
-
-    void ConstraintList::add_constraint(ConstraintPtr constraint_ptr) {
-        constraints_[constraint_ptr->type()] = constraint_ptr;
-    }
-
-    void ConstraintList::remove_constraint(Type constraint_type) {
-//        if (has_constraint(constraint_type)) {
-        constraints_.erase(constraint_type);
-//        }
-    }
-
-    void ConstraintList::add_goal_constraint(Type constraint_type) {
-        important_constraints_.emplace(constraint_type);
-    }
-
-    void ConstraintList::remove_goal_constraint(Type constraint_type) {
-        important_constraints_.erase(constraint_type);
-    }
-
-    std::map<Constraint::Type, ConstraintPtr> ConstraintList::constraints() {
-        return constraints_;
-    }
-
-    void ConstraintList::bind_graph(GraphPtr graph_ptr) {
-        for (auto &c : constraints_) {
-            c.second->bind_graph(graph_ptr);
-        }
-    }
-
-    void ConstraintList::add_edge(int from, int to) {
-        for (auto &c : constraints_) {
-            c.second->add_edge(from, to);
-        }
-    }
-
-    Constraint::SatisfactionVerdict ConstraintList::check() {
-        auto res = SatisfactionVerdict::kOK;
-        for (auto &c : constraints_) {
-            res = std::min(res, c.second->check());
-        }
-        auto res_goals = check_goals();
-        if (res_goals == SatisfactionVerdict::kOK && res >= SatisfactionVerdict::kPossible) {
-            return SatisfactionVerdict::kOK;
-        }
-        return res;
-    }
-
-    Constraint::SatisfactionVerdict ConstraintList::check_goals() {
-        if (!important_constraints_.empty()) {
-            auto res = SatisfactionVerdict::kOK;
-            for (auto imporant : important_constraints_) {
-                res = std::min(res, constraints_[imporant]->check());
-            }
-            return res;
-        }
-        return SatisfactionVerdict::kPossible;
     }
 }

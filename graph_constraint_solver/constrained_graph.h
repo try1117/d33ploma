@@ -5,15 +5,16 @@
 
 #include "graph.h"
 #include "constraint.h"
+#include "constraint_block.h"
 
 namespace graph_constraint_solver {
 
     class ConstrainedGraph {
     public:
         ConstrainedGraph();
-        ConstrainedGraph(ConstraintListPtr constraint_list_ptr, GraphPtr graph_ptr);
+        ConstrainedGraph(ConstraintBlockPtr constraint_list_ptr, GraphPtr graph_ptr);
         ConstrainedGraph(ConstrainedGraph &other);
-        ConstraintListPtr constraint_list_ptr();
+        ConstraintBlockPtr constraint_list_ptr();
         GraphPtr graph_ptr();
 
         void add_edge(int from, int to);
@@ -25,7 +26,7 @@ namespace graph_constraint_solver {
 
     private:
         GraphPtr graph_ptr_;
-        ConstraintListPtr constraint_list_ptr_;
+        ConstraintBlockPtr constraint_list_ptr_;
     };
 
     using ConstrainedGraphPtr = std::shared_ptr<ConstrainedGraph>;

@@ -44,10 +44,41 @@ namespace graph_constraint_solver {
         virtual std::pair<int, int> recommend_edge();
 
         virtual SatisfactionVerdict check() = 0;
+        static SatisfactionVerdict lies_in_between(int left_bound, int value, int right_bound, bool increasing = true);
 
     protected:
         GraphPtr graph_ptr_;
         Type type_;
+    };
+
+    template <typename T, Constraint::Type constraint_type>
+    class BoundedValueConstraint : public Constraint {
+    public:
+        BoundedValueConstraint(T left_bound, T right_bound)
+                : Constraint(constraint_type), left_bound_(left_bound), right_bound_(right_bound) {
+        }
+
+        explicit BoundedValueConstraint(T left_bound)
+                : BoundedValueConstraint(left_bound, left_bound) {
+        }
+
+        explicit BoundedValueConstraint(std::pair<T, T> bounds)
+            : BoundedValueConstraint(bounds.first, bounds.second) {
+        }
+
+        virtual T value() = 0;
+
+        std::pair<T, T> bounds() {
+            return std::pair(left_bound_, right_bound_);
+        }
+
+        SatisfactionVerdict check() override {
+            return lies_in_between(left_bound_, value(), right_bound_);
+        }
+
+    protected:
+        T left_bound_;
+        T right_bound_;
     };
 
     class GraphTypeConstraint : public Constraint {
@@ -61,39 +92,25 @@ namespace graph_constraint_solver {
         Graph::Type graph_type_;
     };
 
-    class OrderConstraint : public Constraint {
+    class OrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kOrder> {
     public:
-        explicit OrderConstraint(int order);
+        using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int order();
-        SatisfactionVerdict check();
-
-    private:
-        int order_;
+        int value() override;
     };
 
-    class SizeConstraint : public Constraint {
+    class SizeConstraint : public BoundedValueConstraint<int, Constraint::Type::kSize> {
     public:
-        SizeConstraint(int left_bound, int right_bound = -1);
+        using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        SatisfactionVerdict check();
-        std::pair<int, int> bounds();
-
-    private:
-        int left_bound_;
-        int right_bound_;
+        int value() override;
     };
 
-    class ComponentsNumberConstraint : public Constraint {
+    class ComponentsNumberConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentsNumber> {
     public:
-        ComponentsNumberConstraint(int left_bound, int right_bound = -1);
+        using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        SatisfactionVerdict check();
-        std::pair<int, int> bounds();
-
-    private:
-        int left_bound_;
-        int right_bound_;
+        int value() override;
     };
 
     // TODO: real tree constraint (dsu or something)
@@ -132,50 +149,6 @@ namespace graph_constraint_solver {
 
         int _count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges = false);
     };
-
-    class ConstraintList : public Constraint {
-    public:
-        ConstraintList();
-        ConstraintList(ConstraintList &other);
-        ConstraintPtr clone() override;
-
-        void bind_graph(GraphPtr graph_ptr) override;
-
-        std::map<Type, ConstraintPtr> constraints();
-        bool has_constraint(Type constraint_type);
-
-        void add_constraint(ConstraintPtr constraint_ptr);
-        void remove_constraint(Type constraint_type);
-
-        template <typename T>
-        std::shared_ptr<T> get_constraint(Type constraint_type) {
-            if (has_constraint(constraint_type)) {
-                return std::static_pointer_cast<T>(constraints_.at(constraint_type));
-            }
-            return nullptr;
-        }
-
-        void add_goal_constraint(Type constraint_type);
-        void remove_goal_constraint(Type constraint_type);
-
-        void add_edge(int, int) override;
-
-        SatisfactionVerdict check();
-
-        // TODO: parse
-        void parse_JSON(std::string filepath) {}
-        void parse_XML(std::string filepath) {}
-
-    private:
-        // TODO: maybe we need std::map<Constraint::Type, std::vector<ConstraintPtr>>
-        // not sure now whether we'll have multiple constraints of the same type
-        std::map<Type, ConstraintPtr> constraints_;
-        std::set<Type> important_constraints_;
-
-        SatisfactionVerdict check_goals();
-    };
-
-    using ConstraintListPtr = std::shared_ptr<ConstraintList>;
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_CONSTRAINT_H

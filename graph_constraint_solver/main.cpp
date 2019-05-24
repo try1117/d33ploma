@@ -22,12 +22,11 @@ int main() {
     std::pair<int, int> components_number = {100, 200};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
-    graph_constraint_solver::ConstraintListPtr constraints = std::make_shared<graph_constraint_solver::ConstraintList>();
+    auto constraints = std::make_shared<graph_constraint_solver::ConnectedBlock>();
 
     constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size.first, size.second));
-
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsNumberConstraint>(components_number.first, components_number.second));
 
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::TreeConstraint>());

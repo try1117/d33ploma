@@ -9,13 +9,14 @@
 
 namespace graph_constraint_solver {
 
-    ConstrainedGraphPtr Generator::generate(ConstraintListPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::generate(ConstraintBlockPtr constraint_list_ptr) {
         // TODO: default values
         auto graph_type = constraint_list_ptr->template get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->graph_type();
-        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->order();
-        auto size_bounds = constraint_list_ptr->template get_constraint<SizeConstraint>(Constraint::Type::kSize)->bounds();
-        auto components_number_bounds = constraint_list_ptr->template get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
-        return generate_components(graph_type, order, size_bounds, components_number_bounds, constraint_list_ptr);
+        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds();
+        auto size = constraint_list_ptr->template get_constraint<SizeConstraint>(Constraint::Type::kSize)->bounds();
+        auto components_number = constraint_list_ptr->template get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
+        return generate_components(graph_type, order, size, components_number, constraint_list_ptr);
+//        if (constraint_list_)
     }
 
     std::vector<int> generate_n_numbers(int n, int sum, std::function<bool(std::vector<int>&)> check) {
@@ -40,11 +41,12 @@ namespace graph_constraint_solver {
     // where BridgeConstraint would recommend us to build tree, then 2-connected components
 
     // GENERATE 2-CONNECTED GRAPH FOR NOW
-    ConstrainedGraphPtr Generator::generate_components(Graph::Type graph_type, int order,
+    ConstrainedGraphPtr Generator::generate_components(Graph::Type graph_type, std::pair<int, int> order_bounds,
             std::pair<int, int> size_bounds, std::pair<int, int> components_number_bounds,
-            ConstraintListPtr constraint_list_ptr) {
+            ConstraintBlockPtr constraint_list_ptr) {
 
         for (int iter = 0; iter < 100; ++iter) {
+            auto order = random.next(order_bounds);
             auto components_number = random.next(components_number_bounds);
             auto size = random.next(size_bounds);
             auto generated_edges = generate_2connected_graph(order, size, components_number);
@@ -65,7 +67,7 @@ namespace graph_constraint_solver {
 //            ConstrainedGraphPtr result = std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order, graph_type));
 //            bool success = true;
 //            for (auto component_order : components_orders) {
-//                ConstraintListPtr component_constraint_list = std::static_pointer_cast<ConstraintList>(constraint_list_ptr->clone());
+//                ConstraintBlockPtr component_constraint_list = std::static_pointer_cast<ConstraintBlock>(constraint_list_ptr->clone());
 //                component_constraint_list->add_constraint(std::make_shared<OrderConstraint>(component_order));
 //                component_constraint_list->add_constraint(std::make_shared<ComponentsNumberConstraint>(1));
 //                auto component = generate_single_component(component_constraint_list);
@@ -146,7 +148,7 @@ namespace graph_constraint_solver {
         return std::make_shared<ConstrainedGraph>();
     }
 
-    ConstrainedGraphPtr Generator::generate_tree(int order, ConstraintListPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::generate_tree(int order, ConstraintBlockPtr constraint_list_ptr) {
         bool remove_tree_constraint = false;
         if (!constraint_list_ptr->has_constraint(Constraint::Type::kTree)) {
             constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>(random.next(-10, 10)));
@@ -170,9 +172,10 @@ namespace graph_constraint_solver {
         return tree;
     }
 
-    ConstrainedGraphPtr Generator::generate_single_component(ConstraintListPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::generate_single_component(ConstraintBlockPtr constraint_list_ptr) {
 
-        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->order();
+        // TODO: use not only left_bound but full range
+        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds().first;
 
         auto tree_generator = [&]() -> ConstrainedGraphPtr {
             return generate_tree(order, constraint_list_ptr);
