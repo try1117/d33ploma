@@ -24,7 +24,13 @@ namespace graph_constraint_solver {
 
     extern Random random;
 
-    double timeit(std::function<void()> f);
+    class Utils {
+    public:
+        static double timeit(std::function<void()> f);
+        static bool in_range(long long left_bound, long long value, long long right_bound);
+        static bool in_range(std::pair<long long, long long> bounds, long long value);
+        static long long complete_graph_size(long long order);
+    };
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_UTILS_H

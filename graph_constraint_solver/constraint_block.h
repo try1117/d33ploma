@@ -42,6 +42,11 @@ namespace graph_constraint_solver {
 
         SatisfactionVerdict check() override;
 
+        Graph::Type get_graph_type();
+        std::pair<int, int> get_order_bounds();
+        std::pair<int, int> get_size_bounds();
+        std::pair<int, int> get_components_number_bounds();
+
         // TODO: parse
         void parse_JSON(std::string filepath) {}
         void parse_XML(std::string filepath) {}
@@ -64,6 +69,14 @@ namespace graph_constraint_solver {
     class ConnectedBlock : public ConstraintBlock {
     public:
         ConnectedBlock();
+
+    private:
+        static const std::set<Constraint::Type> available_constraint_types_;
+    };
+
+    class TwoConnectedBlock : public ConstraintBlock {
+    public:
+        TwoConnectedBlock();
 
     private:
         static const std::set<Constraint::Type> available_constraint_types_;

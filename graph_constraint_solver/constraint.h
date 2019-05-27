@@ -28,8 +28,10 @@ namespace graph_constraint_solver {
             kOrder,
             kSize,
             kComponentsNumber,
+            kComponentsOrder,
             kTree,
             kBridge,
+            kCutPoint,
         };
 
         explicit Constraint(Type type);
@@ -58,11 +60,11 @@ namespace graph_constraint_solver {
                 : Constraint(constraint_type), left_bound_(left_bound), right_bound_(right_bound) {
         }
 
-        explicit BoundedValueConstraint(T left_bound)
+        BoundedValueConstraint(T left_bound)
                 : BoundedValueConstraint(left_bound, left_bound) {
         }
 
-        explicit BoundedValueConstraint(std::pair<T, T> bounds)
+        BoundedValueConstraint(std::pair<T, T> bounds)
             : BoundedValueConstraint(bounds.first, bounds.second) {
         }
 
@@ -111,6 +113,15 @@ namespace graph_constraint_solver {
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
         int value() override;
+    };
+
+    // TODO: derive class from BoundedValueConstraint
+    class ComponentsOrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentsOrder> {
+    public:
+        using BoundedValueConstraint::BoundedValueConstraint;
+        ConstraintPtr clone() override;
+        int value() override;
+        SatisfactionVerdict check() override;
     };
 
     // TODO: real tree constraint (dsu or something)

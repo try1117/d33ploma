@@ -10,13 +10,7 @@
 namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate(ConstraintBlockPtr constraint_list_ptr) {
-        // TODO: default values
-        auto graph_type = constraint_list_ptr->template get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->graph_type();
-        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds();
-        auto size = constraint_list_ptr->template get_constraint<SizeConstraint>(Constraint::Type::kSize)->bounds();
-        auto components_number = constraint_list_ptr->template get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
-        return generate_components(graph_type, order, size, components_number, constraint_list_ptr);
-//        if (constraint_list_)
+        return generate_block(constraint_list_ptr);
     }
 
     std::vector<int> generate_n_numbers(int n, int sum, std::function<bool(std::vector<int>&)> check) {
@@ -30,26 +24,22 @@ namespace graph_constraint_solver {
         return result;
     }
 
-    // Генерация компонент как отдельных графов вызывает сложности с глобальными ограничениями ...
-    // Надо подумать как лучше этого избежать
-
-    // Ok now we have 4 constraints:
-    // Order, size, components_number and bridges_number
-
-    // Possible way to generate such graph:
-    // well need to write single_component_generation first
-    // where BridgeConstraint would recommend us to build tree, then 2-connected components
-
     // GENERATE 2-CONNECTED GRAPH FOR NOW
-    ConstrainedGraphPtr Generator::generate_components(Graph::Type graph_type, std::pair<int, int> order_bounds,
-            std::pair<int, int> size_bounds, std::pair<int, int> components_number_bounds,
-            ConstraintBlockPtr constraint_list_ptr) {
+    ConstrainedGraphPtr Generator::generate_block(ConstraintBlockPtr constraint_list_ptr) {
+
+        // TODO: default values
+        auto graph_type = constraint_list_ptr->get_graph_type();
+        auto order_bounds = constraint_list_ptr->get_order_bounds();
+        auto size_bounds = constraint_list_ptr->get_size_bounds();
+        auto components_number_bounds = constraint_list_ptr->get_components_number_bounds();
+
+        auto components_order_bounds = constraint_list_ptr->template get_constraint<ComponentsOrderConstraint>(Constraint::Type::kComponentsOrder)->bounds();
 
         for (int iter = 0; iter < 100; ++iter) {
             auto order = random.next(order_bounds);
             auto components_number = random.next(components_number_bounds);
             auto size = random.next(size_bounds);
-            auto generated_edges = generate_2connected_graph(order, size, components_number);
+            auto generated_edges = generate_2connected_graph(order, size, components_number, components_order_bounds);
             if (!generated_edges.empty()) {
                 return std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order, graph_type, generated_edges));
             }
@@ -187,16 +177,39 @@ namespace graph_constraint_solver {
         return result;
     }
 
-    std::vector<std::pair<int, int>> Generator::generate_2connected_graph(int order, int size, int components_number) {
-        int minimal_order = 3;
+    // TODO: create class TwoConnectedGenerator ???
+    // actually in the future I'll need some class ComponentGenerator with stuff from this function
+    std::vector<std::pair<int, int>> Generator::generate_2connected_graph(int order, int size, int components_number,
+                                                                          std::pair<int, int> components_order_bounds) {
+
+        // TODO: call it min_component_order (there probably will be some harder constraints later)
+        long long min_order = components_order_bounds.first;
+        long long max_order = components_order_bounds.second;
+
         auto get_large_component_order = [&](int order, int components_number) {
-            return order - minimal_order * (components_number - 1);
+            return std::min(max_order, order - min_order * (components_number - 1));
         };
 
         auto get_edges_bounds = [&](int order, int components_number) {
-            int min_size = order;
-            int large_component = get_large_component_order(order, components_number);
-            long long max_size = 1LL * large_component * (large_component - 1) / 2 + 3 * (components_number - 1);
+            auto min_size = order;
+            auto L = get_large_component_order(order, components_number);
+
+            long long L_cnt, resid;
+            if (L != min_order) {
+                L_cnt = (order - min_order * components_number) / (L - min_order);
+                resid = (order - min_order * components_number) % (L - min_order);
+            }
+            else {
+                L_cnt = components_number;
+                resid = 0;
+            }
+
+            long long max_size = Utils::complete_graph_size(L) * L_cnt;
+            if (resid) {
+                max_size += Utils::complete_graph_size(min_order + resid);
+            }
+            max_size += Utils::complete_graph_size(min_order) * (components_number - L_cnt - (resid != 0));
+
             return std::make_pair(min_size, max_size);
         };
 
@@ -204,11 +217,11 @@ namespace graph_constraint_solver {
             if (!order || !components_number) {
                 return !order && !size && !components_number;
             }
-            if (order < minimal_order * components_number) {
+            if (!Utils::in_range(min_order * components_number, order, max_order * components_number)) {
                 return false;
             }
             auto bounds = get_edges_bounds(order, components_number);
-            return bounds.first <= size && size <= bounds.second;
+            return Utils::in_range(bounds, size);
         };
 
         std::vector<std::pair<int, int>> result;
@@ -221,7 +234,7 @@ namespace graph_constraint_solver {
         for (int i = 0; i < components_number; ++i) {
             int large_component = get_large_component_order(current_order, components_number - i);
             int component_order;
-            int prev_component_order = minimal_order - 1;
+            int prev_component_order = min_order - 1;
             int component_size;
             int prev_component_size;
 
@@ -244,15 +257,15 @@ namespace graph_constraint_solver {
                 }
 
                 bool possible = false;
-                component_size = random.next(size_left_bound, size_right_bound);
-                do {
+                prev_component_size = size_left_bound - 1;
+                while (prev_component_size != size_right_bound) {
+                    component_size = random.next(prev_component_size + 1, size_right_bound);
                     if (possible_to_construct(next_order, current_size - component_size, components_number - i - 1)) {
                         possible = true;
                         break;
                     }
                     prev_component_size = component_size;
-                    component_size = random.next(prev_component_size + 1, size_right_bound);
-                } while (prev_component_size != size_right_bound);
+                }
 
                 if (possible) {
                     break;
@@ -266,7 +279,7 @@ namespace graph_constraint_solver {
                 throw std::exception();
             }
 
-            auto component = generate_2connected_component(component_order, component_size);
+            auto component = generate_2connected_component(component_order, component_size, components_order_bounds);
             int shift = order - current_order;
             for (auto &edge : component) {
                 result.emplace_back(edge.first + shift, edge.second + shift);
@@ -278,43 +291,71 @@ namespace graph_constraint_solver {
         return result;
     }
 
-    std::vector<std::pair<int, int>> Generator::generate_2connected_component(int order, int size) {
+    std::vector<std::pair<int, int>> Generator::generate_2connected_component(int order, int size,
+                                                                              std::pair<int, int> components_order_bounds) {
+
+        // first ear
+        auto min_loop_size = 3;
+
         std::vector<std::pair<int, int>> result;
-        if (order < 3 || size < order || size > 1LL * order * (order - 1) / 2) {
+        // TODO: not necessary check, as we check possibility in the upper function
+        if (!Utils::in_range(components_order_bounds, order) || !Utils::in_range(order, size, Utils::complete_graph_size(order))) {
+            return result;
+        }
+        if (order < min_loop_size) {
             return result;
         }
 
+        // TODO: flag whether we allow parallel edges or not
+        // check it somehow better ...
+        // maybe we'll use Graph to store the edges ...
+        // do not allow parallel edges
+        std::set<std::pair<int, int>> used_edges;
+
         int circuit_rank = size - order + 1;
-        int a1 = circuit_rank == 1 ? order : random.next(3, order);
+        int a1 = circuit_rank == 1 ? order : random.next(min_loop_size, order);
         for (int i = 0; i < a1; ++i) {
             result.emplace_back(i, (i + 1) % a1);
+            used_edges.insert({std::min(i, (i + 1) % a1), std::max(i, (i + 1) % a1)});
         }
 
         int vertices_made = a1;
         int ears_made = 1;
 
         auto generate_ear = [&](int n) {
-            int start = random.next(0, a1 - 1);
-            int finish = random.next(0, vertices_made - 1);
-            if (start == finish) {
-                finish = start == 0 ? 1 : start - 1;
-            }
+            int start, finish;
+            do {
+                start = random.next(0, vertices_made - 1);
+                finish = random.next(0, vertices_made - 1);
+                if (start == finish) {
+                    finish = start == 0 ? 1 : start - 1;
+                }
+            } while (n == 0 && used_edges.count({std::min(start, finish), std::max(start, finish)}));
+
             if (n == 0) {
                 result.emplace_back(start, finish);
+                used_edges.insert({std::min(start, finish), std::max(start, finish)});
             }
             else {
                 result.emplace_back(start, vertices_made++);
+                used_edges.insert({start, vertices_made - 1});
+
                 for (int i = 0; i < n - 1; ++i, ++vertices_made) {
                     result.emplace_back(vertices_made - 1, vertices_made);
+                    used_edges.insert({vertices_made - 1, vertices_made});
                 }
+
                 result.emplace_back(vertices_made - 1, finish);
+                used_edges.insert({finish, vertices_made - 1});
             }
         };
 
         for (; ears_made < circuit_rank - 1; ++ears_made) {
-            int ear_inner_size = random.next(0, order - vertices_made);
+            int left_bound = Utils::complete_graph_size(vertices_made) == used_edges.size();
+            int ear_inner_size = random.next(left_bound, order - vertices_made);
             generate_ear(ear_inner_size);
         }
+        // this condition will be false when we have only 1 ear
         if (ears_made < circuit_rank) {
             generate_ear(order - vertices_made);
         }

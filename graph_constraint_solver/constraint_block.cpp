@@ -84,18 +84,53 @@ namespace graph_constraint_solver {
         return SatisfactionVerdict::kPossible;
     }
 
+    Graph::Type ConstraintBlock::get_graph_type() {
+        return get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->graph_type();
+    }
+
+    std::pair<int, int> ConstraintBlock::get_order_bounds() {
+        return get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds();
+    }
+
+    std::pair<int, int> ConstraintBlock::get_size_bounds() {
+        return get_constraint<SizeConstraint>(Constraint::Type::kSize)->bounds();
+    }
+
+    std::pair<int, int> ConstraintBlock::get_components_number_bounds() {
+        return get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
+    }
+
+    const std::set<Constraint::Type> combine_constraint_types(std::initializer_list<Constraint::Type> constraint_types) {
+        std::vector<Constraint::Type> important({
+            Constraint::Type::kGraphType,
+            Constraint::Type::kOrder,
+            Constraint::Type::kSize,
+            Constraint::Type::kComponentsNumber,
+            Constraint::Type::kComponentsOrder,
+        });
+        important.insert(important.end(), constraint_types);
+        return std::set<Constraint::Type>(important.begin(), important.end());
+    }
+
     // ConnectedBlock
 
-    const std::set<Constraint::Type> ConnectedBlock::available_constraint_types_({
-        Constraint::Type::kGraphType,
-        Constraint::Type::kOrder,
-        Constraint::Type::kSize,
-        Constraint::Type::kComponentsNumber,
+    const std::set<Constraint::Type> ConnectedBlock::available_constraint_types_ = combine_constraint_types({
         Constraint::Type::kBridge,
+        Constraint::Type::kCutPoint,
     });
 
     ConnectedBlock::ConnectedBlock()
         : ConstraintBlock(ComponentType::kConnected) {
+
+    }
+
+    // ConnectedBlock
+
+    const std::set<Constraint::Type> TwoConnectedBlock::available_constraint_types_ = combine_constraint_types({
+    });
+
+    TwoConnectedBlock::TwoConnectedBlock()
+            : ConstraintBlock(ComponentType::kTwoConnected) {
 
     }
 }

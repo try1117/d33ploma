@@ -97,6 +97,21 @@ namespace graph_constraint_solver {
         return components_number;
     }
 
+    // ComponentsOrderConstraint
+
+    ConstraintPtr ComponentsOrderConstraint::clone() {
+        return std::make_shared<ComponentsOrderConstraint>(*this);
+    }
+
+    int ComponentsOrderConstraint::value() {
+        // TODO: count min/max component order
+        return 0;
+    }
+
+    Constraint::SatisfactionVerdict ComponentsOrderConstraint::check() {
+        return Constraint::SatisfactionVerdict::kOK;
+    }
+
     // TreeConstraint
 
     TreeConstraint::TreeConstraint(int weight)
