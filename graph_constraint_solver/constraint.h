@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 #include <map>
+#include <string>
 
 #include "graph.h"
 
@@ -29,7 +30,9 @@ namespace graph_constraint_solver {
             kSize,
             kComponentsNumber,
             kComponentsOrder,
-            kTree,
+            kDiameter,
+            kTreeBroadness,
+            kVertexMaxDegree,
             kBridge,
             kCutPoint,
         };
@@ -38,6 +41,7 @@ namespace graph_constraint_solver {
         virtual ConstraintPtr clone() = 0;
 
         Type type();
+        const std::string type_name();
         GraphPtr graph_ptr();
         virtual void bind_graph(GraphPtr graph_ptr);
 
@@ -51,6 +55,36 @@ namespace graph_constraint_solver {
     protected:
         GraphPtr graph_ptr_;
         Type type_;
+        static const std::unordered_map<Type, std::string> type_to_name_;
+    };
+
+    template <typename T, Constraint::Type constraint_type>
+    class SingleValueConstraint : public Constraint {
+    public:
+        SingleValueConstraint(T value)
+            : Constraint(constraint_type), value_(value) {
+        }
+
+        T value() {
+            return value_;
+        }
+
+    protected:
+        T value_;
+    };
+
+    class GraphTypeConstraint : public SingleValueConstraint<Graph::Type, Constraint::Type::kGraphType> {
+    public:
+        using SingleValueConstraint::SingleValueConstraint;
+        ConstraintPtr clone() override;
+        SatisfactionVerdict check() override;
+    };
+
+    class VertexMaxDegreeConstraint : public SingleValueConstraint<int, Constraint::Type::kVertexMaxDegree> {
+    public:
+        using SingleValueConstraint::SingleValueConstraint;
+        ConstraintPtr clone() override;
+        SatisfactionVerdict check() override;
     };
 
     template <typename T, Constraint::Type constraint_type>
@@ -58,6 +92,10 @@ namespace graph_constraint_solver {
     public:
         BoundedValueConstraint(T left_bound, T right_bound)
                 : Constraint(constraint_type), left_bound_(left_bound), right_bound_(right_bound) {
+
+            if (left_bound_ > right_bound_) {
+                throw std::invalid_argument("BoundedValueConstraint: left bound cannot be greater than right bound");
+            }
         }
 
         BoundedValueConstraint(T left_bound)
@@ -83,17 +121,6 @@ namespace graph_constraint_solver {
         T right_bound_;
     };
 
-    class GraphTypeConstraint : public Constraint {
-    public:
-        explicit GraphTypeConstraint(Graph::Type graph_type);
-        ConstraintPtr clone() override;
-        Graph::Type graph_type();
-        SatisfactionVerdict check() override;
-
-    private:
-        Graph::Type graph_type_;
-    };
-
     class OrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kOrder> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
@@ -115,7 +142,6 @@ namespace graph_constraint_solver {
         int value() override;
     };
 
-    // TODO: derive class from BoundedValueConstraint
     class ComponentsOrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentsOrder> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
@@ -124,23 +150,30 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
-    // TODO: real tree constraint (dsu or something)
-    class TreeConstraint : public Constraint {
-    public:
-        explicit TreeConstraint(int weight = 0);
+    class DiameterConstraint : public BoundedValueConstraint<int, Constraint::Type::kDiameter> {
+        using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-//        void bind_graph(GraphPtr graph_ptr);
-
-        void add_edge(int from, int to) override;
-        std::pair<int, int> recommend_edge() override;
-
-        SatisfactionVerdict check() override;
-
-    private:
-        int weight_;
-        int latest_connected_vertex_;
+        int value() override;
     };
 
+//    // TODO: real tree constraint (dsu or something)
+//    class TreeConstraint : public Constraint {
+//    public:
+//        explicit TreeConstraint(int weight = 0);
+//        ConstraintPtr clone() override;
+////        void bind_graph(GraphPtr graph_ptr);
+//
+//        void add_edge(int from, int to) override;
+//        std::pair<int, int> recommend_edge() override;
+//
+//        SatisfactionVerdict check() override;
+//
+//    private:
+//        int weight_;
+//        int latest_connected_vertex_;
+//    };
+
+    // TODO: rewrite later
     class BridgeConstraint : public Constraint {
     public:
         BridgeConstraint(int left_bound, int right_bound);

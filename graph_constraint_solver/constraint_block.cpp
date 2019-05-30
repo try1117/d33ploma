@@ -6,8 +6,19 @@ namespace graph_constraint_solver {
 
     // ConstraintBlock
 
-    ConstraintBlock::ConstraintBlock(ComponentType component_type)
-            : Constraint(Type::kNone), component_type_(component_type) {
+    const std::unordered_map<ConstraintBlock::ComponentType, std::string> ConstraintBlock::component_type_to_name_({
+        {ComponentType::kConnected, "Connected"},
+        {ComponentType::kTwoConnected, "TwoConnected"},
+        {ComponentType::kTwoEdgeConnected, "TwoEdgeConnected"},
+        {ComponentType::kTree, "Tree"},
+        {ComponentType::kRing, "Ring"},
+    });
+
+    ConstraintBlock::ConstraintBlock(ComponentType component_type, const std::set<Constraint::Type> &available_constraint_types,
+                                     const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs)
+            : Constraint(Type::kNone), component_type_(component_type),
+            available_constraint_types_(available_constraint_types),
+            restricted_constraint_pairs_(restricted_constraint_pairs) {
 
     }
 
@@ -16,7 +27,9 @@ namespace graph_constraint_solver {
     }
 
     ConstraintBlock::ConstraintBlock(ConstraintBlock &other)
-            : Constraint(Type::kNone), important_constraints_(other.important_constraints_) {
+            : Constraint(Type::kNone), important_constraints_(other.important_constraints_),
+            available_constraint_types_(other.available_constraint_types_),
+            restricted_constraint_pairs_(other.restricted_constraint_pairs_) {
 
         for (auto &c : other.constraints_) {
             constraints_[c.first] = c.second->clone();
@@ -28,6 +41,16 @@ namespace graph_constraint_solver {
     }
 
     void ConstraintBlock::add_constraint(ConstraintPtr constraint_ptr) {
+        if (!available_constraint_types_.count(constraint_ptr->type())) {
+            throw std::invalid_argument(component_type_name() + "-component does not allow " + constraint_ptr->type_name() + "-constraint");
+        }
+        for (auto &constraint : constraints_) {
+            if (restricted_constraint_pairs_.count({constraint.second->type(), constraint_ptr->type()}) ||
+                    restricted_constraint_pairs_.count({constraint_ptr->type(), constraint.second->type()})) {
+                throw std::invalid_argument(component_type_name() + "-component does not allow both constraints '" +
+                constraint.second->type_name() + "' and '" + constraint_ptr->type_name() + "' at the same time");
+            }
+        }
         constraints_[constraint_ptr->type()] = constraint_ptr;
     }
 
@@ -73,6 +96,14 @@ namespace graph_constraint_solver {
         return res;
     }
 
+    ConstraintBlock::ComponentType ConstraintBlock::component_type() {
+        return component_type_;
+    }
+
+    const std::string ConstraintBlock::component_type_name() {
+        return component_type_to_name_.at(component_type_);
+    }
+
     Constraint::SatisfactionVerdict ConstraintBlock::check_goals() {
         if (!important_constraints_.empty()) {
             auto res = SatisfactionVerdict::kOK;
@@ -85,7 +116,7 @@ namespace graph_constraint_solver {
     }
 
     Graph::Type ConstraintBlock::get_graph_type() {
-        return get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->graph_type();
+        return get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->value();
     }
 
     std::pair<int, int> ConstraintBlock::get_order_bounds() {
@@ -101,36 +132,67 @@ namespace graph_constraint_solver {
     }
 
     const std::set<Constraint::Type> combine_constraint_types(std::initializer_list<Constraint::Type> constraint_types) {
-        std::vector<Constraint::Type> important({
+        std::vector<Constraint::Type> default_types({
             Constraint::Type::kGraphType,
             Constraint::Type::kOrder,
             Constraint::Type::kSize,
             Constraint::Type::kComponentsNumber,
             Constraint::Type::kComponentsOrder,
         });
-        important.insert(important.end(), constraint_types);
-        return std::set<Constraint::Type>(important.begin(), important.end());
+        default_types.insert(default_types.end(), constraint_types);
+        return std::set<Constraint::Type>(default_types.begin(), default_types.end());
     }
 
     // ConnectedBlock
 
-    const std::set<Constraint::Type> ConnectedBlock::available_constraint_types_ = combine_constraint_types({
+    const std::set<Constraint::Type> connected_block_types_ = combine_constraint_types({
         Constraint::Type::kBridge,
         Constraint::Type::kCutPoint,
     });
 
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> connected_block_restrictions_;
+
     ConnectedBlock::ConnectedBlock()
-        : ConstraintBlock(ComponentType::kConnected) {
+        : ConstraintBlock(ComponentType::kConnected, connected_block_types_, connected_block_restrictions_) {
 
     }
 
     // ConnectedBlock
 
-    const std::set<Constraint::Type> TwoConnectedBlock::available_constraint_types_ = combine_constraint_types({
-    });
+    const std::set<Constraint::Type> two_connected_block_types = combine_constraint_types({});
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> two_connected_block_restrictions_;
 
     TwoConnectedBlock::TwoConnectedBlock()
-            : ConstraintBlock(ComponentType::kTwoConnected) {
+            : ConstraintBlock(ComponentType::kTwoConnected, two_connected_block_types, two_connected_block_restrictions_) {
 
+    }
+
+    // TreeBlock
+
+    const std::set<Constraint::Type> tree_block_types({
+        Constraint::Type::kGraphType,
+        Constraint::Type::kOrder,
+//        Constraint::Type::kComponentsNumber,
+//        Constraint::Type::kComponentsOrder,
+        Constraint::Type::kDiameter,
+        Constraint::Type::kTreeBroadness,
+        Constraint::Type::kVertexMaxDegree,
+    });
+
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> tree_block_restrictions_({
+        {Constraint::Type::kTreeBroadness, Constraint::Type::kDiameter},
+    });
+
+    TreeBlock::TreeBlock()
+            : ConstraintBlock(ComponentType::kTree, tree_block_types, tree_block_restrictions_) {
+
+    }
+
+    int TreeBlock::get_maximum_vertex_degree() {
+        return get_constraint<VertexMaxDegreeConstraint>(Type::kVertexMaxDegree)->value();
+    }
+
+    std::pair<int, int> TreeBlock::get_diameter_bounds() {
+        return get_constraint<DiameterConstraint>(Type::kDiameter)->bounds();
     }
 }

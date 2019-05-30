@@ -24,9 +24,16 @@ namespace graph_constraint_solver {
         return result;
     }
 
-    // GENERATE 2-CONNECTED GRAPH FOR NOW
     ConstrainedGraphPtr Generator::generate_block(ConstraintBlockPtr constraint_list_ptr) {
+        if (constraint_list_ptr->component_type() == ConstraintBlock::ComponentType::kTwoConnected) {
+            return generate_two_connected_block(constraint_list_ptr);
+        }
+        if (constraint_list_ptr->component_type() == ConstraintBlock::ComponentType::kTree) {
+            return generate_tree(std::static_pointer_cast<TreeBlock>(constraint_list_ptr));
+        }
+    }
 
+    ConstrainedGraphPtr Generator::generate_two_connected_block(ConstraintBlockPtr constraint_list_ptr) {
         // TODO: default values
         auto graph_type = constraint_list_ptr->get_graph_type();
         auto order_bounds = constraint_list_ptr->get_order_bounds();
@@ -138,43 +145,220 @@ namespace graph_constraint_solver {
         return std::make_shared<ConstrainedGraph>();
     }
 
-    ConstrainedGraphPtr Generator::generate_tree(int order, ConstraintBlockPtr constraint_list_ptr) {
-        bool remove_tree_constraint = false;
-        if (!constraint_list_ptr->has_constraint(Constraint::Type::kTree)) {
-            constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>(random.next(-10, 10)));
-            remove_tree_constraint = true;
-        }
-        constraint_list_ptr->add_goal_constraint(Constraint::Type::kTree);
+    ConstrainedGraphPtr Generator::generate_tree(std::shared_ptr<TreeBlock> constraint_block_ptr) {
+        auto graph_type = constraint_block_ptr->get_graph_type();
+        auto order_bounds = constraint_block_ptr->get_order_bounds();
 
-        auto empty_graph_generator = [&]() -> ConstrainedGraphPtr {
-            return std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order));
-        };
-        auto go_build_tree = [](ConstrainedGraphPtr g) {
-            auto edge = g->constraint_list_ptr()->template get_constraint<TreeConstraint>(Constraint::Type::kTree)->recommend_edge();
-            g->add_edge(edge.first, edge.second);
+        // TODO: use TreeBroadness coefficient
+        // for now only use diameter
+        auto diameter_bounds = constraint_block_ptr->get_diameter_bounds();
+        auto max_vertex_degree = constraint_block_ptr->get_maximum_vertex_degree();
+
+        // TODO: maybe check all this bounds in TreeBlock
+        Utils::assert_segment_inside(1, static_cast<int>(3e6), order_bounds.first, order_bounds.second,
+                "Tree generator: given order bounds");
+        Utils::assert_segment_inside(0, static_cast<int>(3e6), diameter_bounds.first, diameter_bounds.second,
+                "Tree generator: given diameter bounds");
+        Utils::assert_value_inside(0, static_cast<int>(3e6), max_vertex_degree,
+                "Tree generator: given maximum vertex degree");
+
+        auto bad = []() {
+            throw std::runtime_error("Tree generator: Given constraints cannot be satisfied");
         };
 
-        auto tree = go_with_the_winners(empty_graph_generator, go_build_tree);
-        if (remove_tree_constraint) {
-            tree->constraint_list_ptr()->remove_constraint(Constraint::Type::kTree);
+        if (diameter_bounds.first >= order_bounds.second) {
+            bad();
         }
-        tree->constraint_list_ptr()->remove_goal_constraint(Constraint::Type::kTree);
-        return tree;
+        diameter_bounds.second = std::min(diameter_bounds.second, order_bounds.second - 1);
+
+        // TODO: maybe there are some other bad cases
+        if (max_vertex_degree <= 1 && diameter_bounds.first > max_vertex_degree) {
+            bad();
+        }
+
+        // give this guy a graph...
+        if (max_vertex_degree == 0) {
+
+        }
+        if (max_vertex_degree == 1) {
+
+        }
+
+        long long v = max_vertex_degree;
+        long long inf = order_bounds.second;
+
+        // true formula is: (d + 1) + (v - 2) * [ 2 * SUM_{i = 0}^{floor[(d - 1) / 2]}((v - 1) ^ i) + (d % 2 ? 0 : (v - 1) ^ (d / 2) ]
+        // we stop calculation when value exceeds 'order_bounds.second'
+        // 'd' is diameter
+        // 'v' is max_vertex_degree
+        // function works in O(log2(order_bounds.second)) as minimal v = 3 gives us powers of (v - 1) = 2
+        auto maximum_vertices_number = [&](int d) {
+            long long res = d + 1;
+            if (v == 2) {
+                return res;
+            }
+            long long base = v - 1;
+            long long cur_power = 1;
+            long long cur_sum = 0;
+            for (int i = 0; i < (d - 1) / 2; ++i) {
+                cur_sum += cur_power;
+                cur_power *= base;
+                if (cur_sum >= inf) {
+                    break;
+                }
+            }
+            if (cur_sum >= inf) {
+                return inf;
+            }
+            res += (v - 2) * (2 * cur_sum + (d % 2 ? 0 : cur_power));
+            return std::min(res, inf);
+        };
+
+        // without max_vertex_degree we can build tree with any diameter
+        // but with max_vertex_degree we must find 'good' subsegment
+        int L = diameter_bounds.first;
+        int R = diameter_bounds.second;
+        auto f = [&](long long diameter) {
+            return Utils::non_empty_segments_intersection(order_bounds.first, order_bounds.second,
+                    diameter + 1, maximum_vertices_number(diameter));
+        };
+        // check invariant f(R) == true
+        if (!f(R)) {
+            bad();
+        }
+        // do not search if it's already 'good'
+        if (f(L)) {
+            R = L;
+        }
+        while (R - L > 1) {
+            auto mid = (L + R) / 2;
+            if (f(mid)) R = mid;
+            else L = mid;
+        }
+
+        auto diameter_left = R;
+        auto diameter_right = diameter_bounds.second;
+        auto diameter = random.next(diameter_left, diameter_right);
+        order_bounds.first = std::max(order_bounds.first, diameter + 1);
+        order_bounds.second = std::min<int>(order_bounds.second, maximum_vertices_number(diameter));
+
+        auto tree = generate_tree_fixed_diameter(graph_type, order_bounds, max_vertex_degree, diameter);
+        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, tree);
     }
 
+    GraphPtr Generator::generate_tree_fixed_diameter(Graph::Type graph_type, std::pair<int, int> order_bounds,
+            int max_vertex_degree, int diameter) {
+
+        std::cout << diameter << std::endl;
+        int order = random.next(order_bounds);
+        GraphPtr g = std::make_shared<Graph>(order, graph_type);
+        std::vector<int> level(order);
+        for (int i = 0; i < diameter; ++i) {
+            g->add_edge(i, i + 1);
+            level[i] = std::min(i, diameter - i);
+        }
+
+        DSU dsu(order, true);
+        dsu.unite(0, 1);
+        dsu.unite(diameter, diameter - 1);
+
+        auto connect_to_neighbor = [&](int v) {
+            auto seg = dsu.get_segment(v);
+            if (seg.first != 0) {
+                dsu.unite(v, seg.first - 1);
+            }
+            else {
+                dsu.unite(v, seg.second + 1);
+            }
+        };
+
+        int made = diameter;
+        for (int i = diameter + 1; i < order; ++i) {
+            int v = random.next(made + 1);
+            v = dsu.get_parent(v);
+//            auto seg = dsu.get_segment(v);
+//            // segment can become too big, in this case it will eat more and more
+//            // we need a parameter to control it
+//            if (seg.second - seg.first + 1) {
+//
+//            }
+
+            g->add_edge(v, i);
+            level[i] = level[v] - 1;
+            // vertex 'v' is full, connect segment to the left or right
+            if (g->adjacency_list()[v].size() == max_vertex_degree) {
+                connect_to_neighbor(v);
+            }
+            // vertex 'i' is on it's last level, connect it
+            if (level[i] == 0) {
+                connect_to_neighbor(i);
+            }
+        }
+        return g;
+    }
+
+    ConstrainedGraphPtr Generator::generate_tree_block(ConstraintBlockPtr constraint_block_ptr) {
+        auto graph_type = constraint_block_ptr->get_graph_type();
+        auto order_bounds = constraint_block_ptr->get_order_bounds();
+        auto components_number_bounds = constraint_block_ptr->get_components_number_bounds();
+        auto components_order_bounds = constraint_block_ptr->template get_constraint<ComponentsOrderConstraint>(Constraint::Type::kComponentsOrder)->bounds();
+
+        auto possible_to_construct = [&](int components_number, int vertices_made = 0) {
+            auto glob_left = order_bounds.first - vertices_made;
+            auto glob_right = order_bounds.second - vertices_made;
+
+            auto comp_left = components_order_bounds.first * components_number;
+            auto comp_right = components_order_bounds.second * components_number;
+
+            return Utils::non_empty_segments_intersection(glob_left, glob_right, comp_left, comp_right);
+        };
+
+        for (int components_number = components_number_bounds.first; components_number <= components_number_bounds.second; ++components_number) {
+            if (!possible_to_construct(components_number)) {
+                continue;
+            }
+
+        }
+
+        throw std::runtime_error("Tree block generator: Given constraints cannot be satisfied");
+
+//        bool remove_tree_constraint = false;
+//        if (!constraint_list_ptr->has_constraint(Constraint::Type::kTree)) {
+//            constraint_list_ptr->add_constraint(std::make_shared<TreeConstraint>(random.next(-10, 10)));
+//            remove_tree_constraint = true;
+//        }
+//        constraint_list_ptr->add_goal_constraint(Constraint::Type::kTree);
+//
+//        auto empty_graph_generator = [&]() -> ConstrainedGraphPtr {
+//            return std::make_shared<ConstrainedGraph>(constraint_list_ptr, std::make_shared<Graph>(order));
+//        };
+//        auto go_build_tree = [](ConstrainedGraphPtr g) {
+//            auto edge = g->constraint_list_ptr()->template get_constraint<TreeConstraint>(Constraint::Type::kTree)->recommend_edge();
+//            g->add_edge(edge.first, edge.second);
+//        };
+//
+//        auto tree = go_with_the_winners(empty_graph_generator, go_build_tree);
+//        if (remove_tree_constraint) {
+//            tree->constraint_list_ptr()->remove_constraint(Constraint::Type::kTree);
+//        }
+//        tree->constraint_list_ptr()->remove_goal_constraint(Constraint::Type::kTree);
+//        return tree;
+    }
+
+    // TODO: rename and rewrite, it's actually build random connected component
     ConstrainedGraphPtr Generator::generate_single_component(ConstraintBlockPtr constraint_list_ptr) {
 
-        // TODO: use not only left_bound but full range
-        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds().first;
-
-        auto tree_generator = [&]() -> ConstrainedGraphPtr {
-            return generate_tree(order, constraint_list_ptr);
-        };
-        auto go_build_residue = [](ConstrainedGraphPtr g) {
-            g->add_random_edge();
-        };
-        auto result = go_with_the_winners(tree_generator, go_build_residue, true);
-        return result;
+//        // TODO: use not only left_bound but full range
+//        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds().first;
+//
+//        auto tree_generator = [&]() -> ConstrainedGraphPtr {
+//            return generate_tree(order, constraint_list_ptr);
+//        };
+//        auto go_build_residue = [](ConstrainedGraphPtr g) {
+//            g->add_random_edge();
+//        };
+//        auto result = go_with_the_winners(tree_generator, go_build_residue, true);
+//        return result;
     }
 
     // TODO: create class TwoConnectedGenerator ???

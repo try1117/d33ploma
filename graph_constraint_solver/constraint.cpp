@@ -8,6 +8,20 @@ namespace graph_constraint_solver {
 
     // Constraint
 
+    const std::unordered_map<Constraint::Type, std::string> Constraint::type_to_name_({
+        {Type::kNone, "None"},
+        {Type::kGraphType, "GraphType"},
+        {Type::kOrder, "Order"},
+        {Type::kSize, "Size"},
+        {Type::kComponentsNumber, "Number-of-components"},
+        {Type::kComponentsOrder, "Components-order"},
+        {Type::kDiameter, "Diameter"},
+        {Type::kTreeBroadness, "Tree-broadness"},
+        {Type::kVertexMaxDegree, "Vertex-maximum-degree"},
+        {Type::kBridge, "Bridge"},
+        {Type::kCutPoint, "CutPoint"},
+    });
+
     Constraint::SatisfactionVerdict Constraint::lies_in_between(int left_bound, int value, int right_bound, bool increasing) {
         if (value > right_bound) {
             if (increasing) return Constraint::SatisfactionVerdict::kImpossible;
@@ -29,6 +43,10 @@ namespace graph_constraint_solver {
         return type_;
     }
 
+    const std::string Constraint::type_name() {
+        return Constraint::type_to_name_.at(type_);
+    }
+
     GraphPtr Constraint::graph_ptr() {
         return graph_ptr_;
     }
@@ -47,22 +65,24 @@ namespace graph_constraint_solver {
 
     // GraphTypeConstraint
 
-    GraphTypeConstraint::GraphTypeConstraint(Graph::Type graph_type)
-        : Constraint(Type::kGraphType), graph_type_(graph_type) {
-
-    }
-
     ConstraintPtr GraphTypeConstraint::clone() {
         return std::make_shared<GraphTypeConstraint>(*this);
     }
 
-    Graph::Type GraphTypeConstraint::graph_type() {
-        return graph_type_;
+    Constraint::SatisfactionVerdict GraphTypeConstraint::check() {
+        if (graph_ptr_->type() == value_) return SatisfactionVerdict::kOK;
+        return SatisfactionVerdict::kImpossible;
     }
 
-    Constraint::SatisfactionVerdict GraphTypeConstraint::check() {
-        if (graph_ptr_->type() == graph_type_) return SatisfactionVerdict::kOK;
-        return SatisfactionVerdict::kImpossible;
+    // VertexMaxDegreeConstraint
+
+    ConstraintPtr VertexMaxDegreeConstraint::clone() {
+        return std::make_shared<VertexMaxDegreeConstraint>(*this);
+    }
+
+    Constraint::SatisfactionVerdict VertexMaxDegreeConstraint::check() {
+        // TODO: check graph ...
+        return SatisfactionVerdict::kOK;
     }
 
     // OrderConstraint
@@ -112,30 +132,41 @@ namespace graph_constraint_solver {
         return Constraint::SatisfactionVerdict::kOK;
     }
 
+    // DiameterConstraint
+
+    ConstraintPtr DiameterConstraint::clone() {
+        return std::make_shared<DiameterConstraint>(*this);
+    }
+
+    int DiameterConstraint::value() {
+        // TODO: count diameter
+        return 0;
+    }
+
     // TreeConstraint
 
-    TreeConstraint::TreeConstraint(int weight)
-        : Constraint(Type::kTree), weight_(weight), latest_connected_vertex_(0) {
-
-    }
-
-    ConstraintPtr TreeConstraint::clone() {
-        return std::make_shared<TreeConstraint>(*this);
-    }
-
-    std::pair<int, int> TreeConstraint::recommend_edge() {
-        // TODO: check for latest_connected_vertex_ == n - 1
-        return {random.wnext(latest_connected_vertex_ + 1, weight_), latest_connected_vertex_ + 1};
-    }
-
-    void TreeConstraint::add_edge(int from, int to) {
-        latest_connected_vertex_ = std::max(latest_connected_vertex_, std::max(from, to));
-    }
-
-    Constraint::SatisfactionVerdict TreeConstraint::check() {
-        auto t = graph_ptr_->order() - 1;
-        return lies_in_between(t, latest_connected_vertex_, t);
-    }
+//    TreeConstraint::TreeConstraint(int weight)
+//        : Constraint(Type::kTree), weight_(weight), latest_connected_vertex_(0) {
+//
+//    }
+//
+//    ConstraintPtr TreeConstraint::clone() {
+//        return std::make_shared<TreeConstraint>(*this);
+//    }
+//
+//    std::pair<int, int> TreeConstraint::recommend_edge() {
+//        // TODO: check for latest_connected_vertex_ == n - 1
+//        return {random.wnext(latest_connected_vertex_ + 1, weight_), latest_connected_vertex_ + 1};
+//    }
+//
+//    void TreeConstraint::add_edge(int from, int to) {
+//        latest_connected_vertex_ = std::max(latest_connected_vertex_, std::max(from, to));
+//    }
+//
+//    Constraint::SatisfactionVerdict TreeConstraint::check() {
+//        auto t = graph_ptr_->order() - 1;
+//        return lies_in_between(t, latest_connected_vertex_, t);
+//    }
 
 //    void BridgeConstraint::add_directed_edge(int from, int to) {
 //

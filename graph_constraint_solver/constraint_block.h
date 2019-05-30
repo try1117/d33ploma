@@ -15,7 +15,9 @@ namespace graph_constraint_solver {
             kRing,
         };
 
-        explicit ConstraintBlock(ComponentType component_type);
+        ConstraintBlock(ComponentType component_type, const std::set<Constraint::Type> &available_constraint_types,
+                        const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs);
+
         ConstraintBlock(ConstraintBlock &other);
         ConstraintPtr clone() override;
 
@@ -32,7 +34,7 @@ namespace graph_constraint_solver {
             if (has_constraint(constraint_type)) {
                 return std::static_pointer_cast<T>(constraints_.at(constraint_type));
             }
-            return nullptr;
+            throw std::runtime_error("Call to non-existing " + Constraint::type_to_name_.at(constraint_type) + "-constraint");
         }
 
         void add_goal_constraint(Type constraint_type);
@@ -41,6 +43,9 @@ namespace graph_constraint_solver {
         void add_edge(int, int) override;
 
         SatisfactionVerdict check() override;
+
+        ComponentType component_type();
+        const std::string component_type_name();
 
         Graph::Type get_graph_type();
         std::pair<int, int> get_order_bounds();
@@ -61,7 +66,9 @@ namespace graph_constraint_solver {
 
         SatisfactionVerdict check_goals();
 
-        static const std::set<Constraint::Type> available_constraint_types_;
+        const std::set<Constraint::Type> &available_constraint_types_;
+        const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs_;
+        static const std::unordered_map<ComponentType, std::string> component_type_to_name_;
     };
 
     using ConstraintBlockPtr = std::shared_ptr<ConstraintBlock>;
@@ -69,17 +76,18 @@ namespace graph_constraint_solver {
     class ConnectedBlock : public ConstraintBlock {
     public:
         ConnectedBlock();
-
-    private:
-        static const std::set<Constraint::Type> available_constraint_types_;
     };
 
     class TwoConnectedBlock : public ConstraintBlock {
     public:
         TwoConnectedBlock();
+};
 
-    private:
-        static const std::set<Constraint::Type> available_constraint_types_;
+    class TreeBlock : public ConstraintBlock {
+    public:
+        TreeBlock();
+        int get_maximum_vertex_degree();
+        std::pair<int, int> get_diameter_bounds();
     };
 }
 

@@ -91,7 +91,7 @@ namespace graph_constraint_solver {
 
     void Graph::add_directed_edge(int u, int v) {
         g_[u].emplace_back(v);
-        ma_.emplace(u, v);
+//        ma_.emplace(u, v);
 //        ma_[u][v] = true;
     }
 
