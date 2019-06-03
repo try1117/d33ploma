@@ -13,8 +13,8 @@ namespace graph_constraint_solver {
         {Type::kGraphType, "GraphType"},
         {Type::kOrder, "Order"},
         {Type::kSize, "Size"},
-        {Type::kComponentsNumber, "Number-of-components"},
-        {Type::kComponentsOrder, "Components-order"},
+        {Type::kComponentNumber, "Number-of-components"},
+        {Type::kComponentOrder, "Components-order"},
         {Type::kDiameter, "Diameter"},
         {Type::kTreeBroadness, "Tree-broadness"},
         {Type::kVertexMaxDegree, "Vertex-maximum-degree"},
@@ -59,9 +59,9 @@ namespace graph_constraint_solver {
 
     }
 
-    std::pair<int, int> Constraint::recommend_edge() {
-        return graph_ptr_->generate_random_edge();
-    }
+//    std::pair<int, int> Constraint::recommend_edge() {
+//        return graph_ptr_->generate_random_edge();
+//    }
 
     // GraphTypeConstraint
 
@@ -105,30 +105,58 @@ namespace graph_constraint_solver {
         return graph_ptr_->size();
     }
 
-    // ComponentsNumberConstraint
+    // ComponentNumberConstraint
 
-    ConstraintPtr ComponentsNumberConstraint::clone() {
-        return std::make_shared<ComponentsNumberConstraint>(*this);
+    ConstraintPtr ComponentNumberConstraint::clone() {
+        return std::make_shared<ComponentNumberConstraint>(*this);
     }
 
-    int ComponentsNumberConstraint::value() {
+    int ComponentNumberConstraint::value() {
         // TODO: count components_number
         int components_number = 0;
         return components_number;
     }
 
-    // ComponentsOrderConstraint
+    // ComponentOrderConstraint
 
-    ConstraintPtr ComponentsOrderConstraint::clone() {
-        return std::make_shared<ComponentsOrderConstraint>(*this);
+    ConstraintPtr ComponentOrderConstraint::clone() {
+        return std::make_shared<ComponentOrderConstraint>(*this);
     }
 
-    int ComponentsOrderConstraint::value() {
+    int ComponentOrderConstraint::value() {
         // TODO: count min/max component order
         return 0;
     }
 
-    Constraint::SatisfactionVerdict ComponentsOrderConstraint::check() {
+    Constraint::SatisfactionVerdict ComponentOrderConstraint::check() {
+        return Constraint::SatisfactionVerdict::kOK;
+    }
+
+    // ComponentSizeConstraint
+
+    ConstraintPtr ComponentSizeConstraint::clone() {
+        return std::make_shared<ComponentSizeConstraint>(*this);
+    }
+
+    int ComponentSizeConstraint::value() {
+        // TODO: count min/max component size
+    }
+
+    Constraint::SatisfactionVerdict ComponentSizeConstraint::check() {
+        return Constraint::SatisfactionVerdict::kOK;
+    }
+
+    // ComponentCutPointConstraint
+
+    ConstraintPtr ComponentCutPointConstraint::clone() {
+        return std::make_shared<ComponentCutPointConstraint>(*this);
+    }
+
+    int ComponentCutPointConstraint::value() {
+        // TODO: count min/max component size
+    }
+
+    Constraint::SatisfactionVerdict ComponentCutPointConstraint::check() {
         return Constraint::SatisfactionVerdict::kOK;
     }
 
@@ -207,7 +235,9 @@ namespace graph_constraint_solver {
                     _count_bridges(graph_ptr, child, v, res, save_bridges);
                     if (fup[child] > tin[v]) {
                         ++res.first;
-                        if (!graph_ptr->is_leaf(v) && !graph_ptr->is_leaf(child)) {
+                        // not leaf
+                        if (graph_ptr->adjacency_list()[v].size() != 1 &&
+                                graph_ptr->adjacency_list()[child].size() != 1) {
                             ++res.second;
                         }
                         if (save_bridges) {

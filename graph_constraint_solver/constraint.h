@@ -23,18 +23,25 @@ namespace graph_constraint_solver {
             kOK = 2,
         };
 
+        // TODO: component constraints duplicate ordinary ones
+        // maybe we should do something about it
         enum class Type : unsigned char {
             kNone,
             kGraphType,
             kOrder,
             kSize,
-            kComponentsNumber,
-            kComponentsOrder,
+            kBridge,
+            kCutPoint,
+
+            kComponentNumber,
+            kComponentOrder,
+            kComponentSize,
+            kComponentCutPoint,
+            kComponentBridge,
+
             kDiameter,
             kTreeBroadness,
             kVertexMaxDegree,
-            kBridge,
-            kCutPoint,
         };
 
         explicit Constraint(Type type);
@@ -47,7 +54,7 @@ namespace graph_constraint_solver {
 
         // TODO: return Edge type instead of std::pair<int, int>
         virtual void add_edge(int from, int to);
-        virtual std::pair<int, int> recommend_edge();
+//        virtual std::pair<int, int> recommend_edge();
 
         virtual SatisfactionVerdict check() = 0;
         static SatisfactionVerdict lies_in_between(int left_bound, int value, int right_bound, bool increasing = true);
@@ -135,14 +142,31 @@ namespace graph_constraint_solver {
         int value() override;
     };
 
-    class ComponentsNumberConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentsNumber> {
+    class ComponentNumberConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentNumber> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
         int value() override;
     };
 
-    class ComponentsOrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentsOrder> {
+    class ComponentOrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentOrder> {
+    public:
+        using BoundedValueConstraint::BoundedValueConstraint;
+        ConstraintPtr clone() override;
+        int value() override;
+        SatisfactionVerdict check() override;
+    };
+
+    class ComponentSizeConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentSize> {
+    public:
+        using BoundedValueConstraint::BoundedValueConstraint;
+        ConstraintPtr clone() override;
+        int value() override;
+        SatisfactionVerdict check() override;
+    };
+
+
+    class ComponentCutPointConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentCutPoint> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;

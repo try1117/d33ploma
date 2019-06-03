@@ -12,6 +12,7 @@ namespace graph_constraint_solver {
     class Random {
     public:
         Random();
+        std::mt19937 rng();
         double next();
         int next(int n);
         int next(int l, int r);
@@ -19,7 +20,7 @@ namespace graph_constraint_solver {
         // function from testlib
         int wnext(int n, int weight);
     private:
-        std::mt19937 rng;
+        std::mt19937 rng_;
     };
 
     extern Random random;
@@ -31,6 +32,7 @@ namespace graph_constraint_solver {
         static bool in_range(std::pair<long long, long long> bounds, long long value);
         static long long complete_graph_size(long long order);
         static bool non_empty_segments_intersection(long long l1, long long r1, long long l2, long long r2);
+        static bool non_empty_segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2);
 
         static void assert_segment_inside(long long outer_left, long long outer_right,
                 long long inner_left, long long inner_right, std::string exception_prefix);

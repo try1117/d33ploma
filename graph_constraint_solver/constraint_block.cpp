@@ -128,7 +128,7 @@ namespace graph_constraint_solver {
     }
 
     std::pair<int, int> ConstraintBlock::get_components_number_bounds() {
-        return get_constraint<ComponentsNumberConstraint>(Constraint::Type::kComponentsNumber)->bounds();
+        return get_constraint<ComponentNumberConstraint>(Constraint::Type::kComponentNumber)->bounds();
     }
 
     const std::set<Constraint::Type> combine_constraint_types(std::initializer_list<Constraint::Type> constraint_types) {
@@ -136,8 +136,8 @@ namespace graph_constraint_solver {
             Constraint::Type::kGraphType,
             Constraint::Type::kOrder,
             Constraint::Type::kSize,
-            Constraint::Type::kComponentsNumber,
-            Constraint::Type::kComponentsOrder,
+            Constraint::Type::kComponentNumber,
+            Constraint::Type::kComponentOrder,
         });
         default_types.insert(default_types.end(), constraint_types);
         return std::set<Constraint::Type>(default_types.begin(), default_types.end());
@@ -157,13 +157,35 @@ namespace graph_constraint_solver {
 
     }
 
-    // ConnectedBlock
+    // TwoConnectedBlock
 
-    const std::set<Constraint::Type> two_connected_block_types = combine_constraint_types({});
+    const std::set<Constraint::Type> two_connected_block_types({
+        Constraint::Type::kGraphType,
+        Constraint::Type::kOrder,
+        Constraint::Type::kSize,
+        Constraint::Type::kComponentNumber,
+        Constraint::Type::kComponentOrder,
+    });
     const std::set<std::pair<Constraint::Type, Constraint::Type>> two_connected_block_restrictions_;
 
     TwoConnectedBlock::TwoConnectedBlock()
             : ConstraintBlock(ComponentType::kTwoConnected, two_connected_block_types, two_connected_block_restrictions_) {
+
+    }
+
+    // TwoEdgeConnectedBlock
+
+    const std::set<Constraint::Type> two_edge_connected_block_types = combine_constraint_types({
+        Constraint::Type::kGraphType,
+        Constraint::Type::kComponentNumber,
+        Constraint::Type::kComponentOrder,
+        Constraint::Type::kComponentSize,
+        Constraint::Type::kComponentCutPoint,
+    });
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> two_edge_connected_block_restrictions_;
+
+    TwoEdgeConnectedBlock::TwoEdgeConnectedBlock()
+        : ConstraintBlock(ComponentType::kTwoEdgeConnected, two_edge_connected_block_types, two_edge_connected_block_restrictions_) {
 
     }
 
@@ -172,8 +194,8 @@ namespace graph_constraint_solver {
     const std::set<Constraint::Type> tree_block_types({
         Constraint::Type::kGraphType,
         Constraint::Type::kOrder,
-//        Constraint::Type::kComponentsNumber,
-//        Constraint::Type::kComponentsOrder,
+//        Constraint::Type::kComponentNumber,
+//        Constraint::Type::kComponentOrder,
         Constraint::Type::kDiameter,
         Constraint::Type::kTreeBroadness,
         Constraint::Type::kVertexMaxDegree,

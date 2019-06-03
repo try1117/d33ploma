@@ -12,20 +12,20 @@ namespace graph_constraint_solver {
     class ConstrainedGraph {
     public:
         ConstrainedGraph();
-        ConstrainedGraph(ConstraintBlockPtr constraint_list_ptr, GraphPtr graph_ptr);
+        ConstrainedGraph(ConstraintBlockPtr constraint_list_ptr, GraphComponentsPtr components_ptr);
         ConstrainedGraph(ConstrainedGraph &other);
         ConstraintBlockPtr constraint_list_ptr();
-        GraphPtr graph_ptr();
+        GraphComponentsPtr components_ptr();
 
         void add_edge(int from, int to);
-        void add_random_edge();
+//        void add_random_edge();
         bool empty();
         void append_graph(GraphPtr other);
 
         Constraint::SatisfactionVerdict check();
 
     private:
-        GraphPtr graph_ptr_;
+        std::shared_ptr<GraphComponents> components_ptr_;
         ConstraintBlockPtr constraint_list_ptr_;
     };
 

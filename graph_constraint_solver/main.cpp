@@ -2,17 +2,14 @@
 //#include <boost/graph/graphml.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #include "utils.h"
 #include "generator.h"
 
 // TODO: const GraphPtr ...
 
-int main() {
-//    int order = 250;
-//    std::pair<int, int> size = {250, 500};
-//    std::pair<int, int> components_number = {10, 10};
-
+int main(int argc, char *argv[]) {
 //    std::pair<int, int> order = {100, 100};
 //    std::pair<int, int> size = {100, 100};
 //    std::pair<int, int> components_number = {5, 20};
@@ -24,12 +21,16 @@ int main() {
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size));
-//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsNumberConstraint>(components_number));
-//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsOrderConstraint>(components_order));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentNumberConstraint>(components_number));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentOrderConstraint>(components_order));
 
-    std::pair<int, int> order = {800000, 1000000};
-    std::pair<int, int> diameter = {8, 10};
-    int vertex_maximum_degree = 30;
+    if (argc != 8 || std::string(argv[1]) != "tree") {
+        return 0;
+    }
+
+    std::pair<int, int> order = {std::stoi(argv[2]), std::stoi(argv[3])};
+    std::pair<int, int> diameter = {std::stoi(argv[4]), std::stoi(argv[5])};
+    int vertex_maximum_degree = std::stoi(argv[6]);
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     auto constraints = std::make_shared<graph_constraint_solver::TreeBlock>();
@@ -39,8 +40,8 @@ int main() {
     constraints->add_constraint(std::make_shared<graph_constraint_solver::DiameterConstraint>(diameter));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::VertexMaxDegreeConstraint>(vertex_maximum_degree));
 
-//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsNumberConstraint>(components_number));
-//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentsOrderConstraint>(components_order));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentNumberConstraint>(components_number));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentOrderConstraint>(components_order));
 
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::TreeConstraint>());
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::BridgeConstraint>(50, 60));
@@ -51,15 +52,24 @@ int main() {
     auto run_time = graph_constraint_solver::Utils::timeit([&]() {
         auto generator = graph_constraint_solver::Generator();
         g = generator.generate(constraints);
-
-        if (g->empty()) {
-            exit(0);
-        }
-
 //        auto br_cons = constraints->get_constraint<graph_constraint_solver::BridgeConstraint>(graph_constraint_solver::Constraint::Type::kBridge);
 //        bridges_cnt = br_cons->count_bridges(g->graph_ptr(), true);
 //        bridges_list = br_cons->get_bridges_list();
     });
+
+    // TODO: return from Generator::generate GraphPtr of GraphComponentsPtr ???
+//    g->graph_ptr()->shuffle();
+
+    std::ofstream out(argv[7]);
+//    out << g->graph_ptr()->order() << "\n";
+//    for (int i = 0; i < g->graph_ptr()->order(); ++i) {
+//        for (auto child : g->graph_ptr()->adjacency_list()[i]) {
+//            if (i <= child) {
+//                out << i + 1 << " " << child + 1 << "\n";
+//            }
+//        }
+//    }
+    out.close();
 
 //    std::set<std::pair<int, int>> edges;
 //
@@ -78,8 +88,8 @@ int main() {
 //    }
 
 //    std::cout << "Bridg, nonlv: " << bridges_cnt.first << ", " << bridges_cnt.second << std::endl;
-    std::cout << "Graph order : " << g->graph_ptr()->order() << std::endl;
-    std::cout << "Graph size  : " << g->graph_ptr()->size() << std::endl;
-    std::cout << std::endl;
-    std::cout << "Time        : " << run_time << std::endl;
+//    std::cout << "Graph order : " << g->graph_ptr()->order() << std::endl;
+//    std::cout << "Graph size  : " << g->graph_ptr()->size() << std::endl;
+//    std::cout << std::endl;
+//    std::cout << "Time        : " << run_time << std::endl;
 }

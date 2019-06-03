@@ -4,12 +4,16 @@ namespace graph_constraint_solver {
     Random random = Random();
 
     Random::Random()
-//        : rng(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
-        : rng(1234) {
+        : rng_(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
+//        : rng(1234) {
+    }
+
+    std::mt19937 Random::rng() {
+        return rng_;
     }
 
     double Random::next() {
-        return std::uniform_real_distribution<double>(0, 1)(rng);
+        return std::uniform_real_distribution<double>(0, 1)(rng_);
     }
 
     int Random::next(int n) {
@@ -17,7 +21,7 @@ namespace graph_constraint_solver {
     }
 
     int Random::next(int l, int r) {
-        return std::uniform_int_distribution<>(l, r)(rng);
+        return std::uniform_int_distribution<>(l, r)(rng_);
     }
 
     int Random::next(std::pair<int, int> bounds) {
@@ -64,6 +68,10 @@ namespace graph_constraint_solver {
             std::swap(r1, r2);
         }
         return l2 <= r1;
+    }
+
+    bool Utils::non_empty_segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2) {
+        return non_empty_segments_intersection(p1.first, p1.second, p2.first, p2.second);
     }
 
     void Utils::assert_segment_inside(long long outer_left, long long outer_right,

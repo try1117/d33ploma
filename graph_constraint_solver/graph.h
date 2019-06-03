@@ -12,9 +12,7 @@ namespace graph_constraint_solver {
     using GraphPtr = std::shared_ptr<Graph>;
 
     // TODO: multi-edge and self-loops
-    // TODO: directed/undirected graph
-    // in future think about using boost::graph or something like that
-    // now it is primarily undirected graph
+    // in the future think about using boost::graph or something like that
     class Graph {
     public:
         enum class Type : unsigned char {
@@ -24,39 +22,59 @@ namespace graph_constraint_solver {
 
         Graph(int order = 0, Type type = Type::kUndirected);
         // TODO: edge type???
-        Graph(int order, Type type, std::vector<std::pair<int, int>> edges);
 
         Type type();
         // number of vertices
         int order();
-        // number of undirected edges
+        // number of edges
         int size();
         const std::vector<std::vector<int>>& adjacency_list();
-
         bool empty();
-        bool is_leaf(int v);
 
-        void add_edge(int u, int v);
-        std::pair<int, int> generate_random_edge();
-
+        virtual GraphPtr clone() = 0;
+        virtual void add_edge(int u, int v) = 0;
         void append_graph(GraphPtr other);
+        void shuffle();
 
-    private:
-        void add_undirected_edge(int u, int v);
-        void add_directed_edge(int u, int v);
-
-        std::pair<int, int> generate_random_directed_edge();
-        std::pair<int, int> generate_random_undirected_edge();
-
+    protected:
         Type type_;
         int order_;
         int size_;
-        // TODO: do i really need this greatest_variable_ever ?
-        int greatest_used_vertex_index_;
         std::vector<std::vector<int>> g_;
 //        std::vector<std::vector<bool>> ma_;
-        std::set<std::pair<int, int>> ma_;
+//        std::set<std::pair<int, int>> ma_;
     };
+
+    class UndirectedGraph : public Graph {
+    public:
+        UndirectedGraph(int order = 0);
+        UndirectedGraph(int order, const std::vector<std::pair<int, int>> &edges);
+        GraphPtr clone() override;
+        void add_edge(int u, int v) override;
+    };
+
+    class DirectedGraph : public Graph {
+    public:
+        DirectedGraph(int order = 0);
+        DirectedGraph(int order, const std::vector<std::pair<int, int>> &edges);
+        GraphPtr clone() override;
+        void add_edge(int u, int v) override;
+    };
+
+    class GraphComponents {
+    public:
+        GraphComponents() = default;
+        GraphComponents(std::vector<GraphPtr> &components);
+        std::vector<GraphPtr>& components();
+        std::shared_ptr<GraphComponents> clone();
+        bool empty();
+        void add_component(GraphPtr component_ptr);
+
+    private:
+        std::vector<GraphPtr> components_;
+    };
+
+    using GraphComponentsPtr = std::shared_ptr<GraphComponents>;
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_GRAPH_H

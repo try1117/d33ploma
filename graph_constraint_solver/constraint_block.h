@@ -81,7 +81,12 @@ namespace graph_constraint_solver {
     class TwoConnectedBlock : public ConstraintBlock {
     public:
         TwoConnectedBlock();
-};
+    };
+
+    class TwoEdgeConnectedBlock : public ConstraintBlock {
+    public:
+        TwoEdgeConnectedBlock();
+    };
 
     class TreeBlock : public ConstraintBlock {
     public:
@@ -89,6 +94,8 @@ namespace graph_constraint_solver {
         int get_maximum_vertex_degree();
         std::pair<int, int> get_diameter_bounds();
     };
+
+
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_CONSTRAINT_BLOCK_H

@@ -14,11 +14,14 @@ namespace graph_constraint_solver {
     class Generator {
     public:
         ConstrainedGraphPtr generate(ConstraintBlockPtr constraint_list_ptr);
-        ConstrainedGraphPtr generate_block(ConstraintBlockPtr constraint_list_ptr);
+        ConstrainedGraphPtr generate_block(ConstraintBlockPtr constraint_block_ptr);
 
-        ConstrainedGraphPtr generate_two_connected_block(ConstraintBlockPtr constraint_list_ptr);
+        ConstrainedGraphPtr generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr);
+        ConstrainedGraphPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr);
 
+        // TODO: generate_tree returns GraphPtr
         ConstrainedGraphPtr generate_tree(std::shared_ptr<TreeBlock> constraint_block_ptr);
+        // TODO: generate_tree_block is not complete
         ConstrainedGraphPtr generate_tree_block(ConstraintBlockPtr constraint_block_ptr);
 
         ConstrainedGraphPtr generate_single_component(ConstraintBlockPtr constraint_list_ptr);
@@ -30,11 +33,12 @@ namespace graph_constraint_solver {
         GraphPtr generate_tree_fixed_diameter(Graph::Type graph_type, std::pair<int, int> order_bounds,
                 int max_vertex_degree, int diameter);
 
-        std::vector<std::pair<int, int>> generate_2connected_graph(int order, int size, int components_number,
+        GraphComponentsPtr generate_two_connected_graph(int order, int size, int components_number,
                 std::pair<int, int> components_order_bounds);
 
-        std::vector<std::pair<int, int>> generate_2connected_component(int order, int size,
-                std::pair<int, int> components_order_bounds);
+        GraphPtr generate_two_connected_component(int order, int size, std::pair<int, int> components_order_bounds);
+
+        GraphPtr generate_two_edge_connected_component(int order, int size, int cut_points);
     };
 }
 
