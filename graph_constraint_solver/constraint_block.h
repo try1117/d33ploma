@@ -50,7 +50,8 @@ namespace graph_constraint_solver {
         Graph::Type get_graph_type();
         std::pair<int, int> get_order_bounds();
         std::pair<int, int> get_size_bounds();
-        std::pair<int, int> get_components_number_bounds();
+        std::pair<int, int> get_component_number_bounds();
+        std::pair<int, int> get_component_order_bounds();
 
         // TODO: parse
         void parse_JSON(std::string filepath) {}
@@ -90,9 +91,15 @@ namespace graph_constraint_solver {
 
     class TreeBlock : public ConstraintBlock {
     public:
+        static const int kMaximumComponentOrder = static_cast<int>(3e6);
+
         TreeBlock();
-        int get_maximum_vertex_degree();
-        std::pair<int, int> get_diameter_bounds();
+        TreeBlock(Graph::Type graph_type, std::pair<int, int> component_number, std::pair<int, int> component_order_bounds,
+                std::pair<int, int> component_diameter_bounds = std::pair<int, int>(0, kMaximumComponentOrder),
+                        int component_max_vertex_degree = kMaximumComponentOrder);
+
+        int get_component_maximum_vertex_degree();
+        std::pair<int, int> get_component_diameter_bounds();
     };
 
 

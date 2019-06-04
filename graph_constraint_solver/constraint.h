@@ -38,10 +38,11 @@ namespace graph_constraint_solver {
             kComponentSize,
             kComponentCutPoint,
             kComponentBridge,
+            kComponentDiameter,
+            kComponentVertexMaxDegree,
 
-            kDiameter,
-            kTreeBroadness,
-            kVertexMaxDegree,
+//            kTreeBroadness,
+//            kVertexMaxDegree,
         };
 
         explicit Constraint(Type type);
@@ -87,7 +88,7 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
-    class VertexMaxDegreeConstraint : public SingleValueConstraint<int, Constraint::Type::kVertexMaxDegree> {
+    class ComponentVertexMaxDegreeConstraint : public SingleValueConstraint<int, Constraint::Type::kComponentVertexMaxDegree> {
     public:
         using SingleValueConstraint::SingleValueConstraint;
         ConstraintPtr clone() override;
@@ -174,7 +175,7 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
-    class DiameterConstraint : public BoundedValueConstraint<int, Constraint::Type::kDiameter> {
+    class ComponentDiameterConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentDiameter> {
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
         int value() override;

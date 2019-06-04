@@ -127,8 +127,12 @@ namespace graph_constraint_solver {
         return get_constraint<SizeConstraint>(Constraint::Type::kSize)->bounds();
     }
 
-    std::pair<int, int> ConstraintBlock::get_components_number_bounds() {
+    std::pair<int, int> ConstraintBlock::get_component_number_bounds() {
         return get_constraint<ComponentNumberConstraint>(Constraint::Type::kComponentNumber)->bounds();
+    }
+
+    std::pair<int, int> ConstraintBlock::get_component_order_bounds() {
+        return get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
     }
 
     const std::set<Constraint::Type> combine_constraint_types(std::initializer_list<Constraint::Type> constraint_types) {
@@ -193,28 +197,43 @@ namespace graph_constraint_solver {
 
     const std::set<Constraint::Type> tree_block_types({
         Constraint::Type::kGraphType,
-        Constraint::Type::kOrder,
-//        Constraint::Type::kComponentNumber,
-//        Constraint::Type::kComponentOrder,
-        Constraint::Type::kDiameter,
-        Constraint::Type::kTreeBroadness,
-        Constraint::Type::kVertexMaxDegree,
+//        Constraint::Type::kOrder,
+        Constraint::Type::kComponentNumber,
+        Constraint::Type::kComponentOrder,
+        Constraint::Type::kComponentDiameter,
+//        Constraint::Type::kTreeBroadness,
+        Constraint::Type::kComponentVertexMaxDegree,
     });
 
     const std::set<std::pair<Constraint::Type, Constraint::Type>> tree_block_restrictions_({
-        {Constraint::Type::kTreeBroadness, Constraint::Type::kDiameter},
+//        {Constraint::Type::kTreeBroadness, Constraint::Type::kDiameter},
     });
 
+    const int TreeBlock::kMaximumComponentOrder;
+
     TreeBlock::TreeBlock()
-            : ConstraintBlock(ComponentType::kTree, tree_block_types, tree_block_restrictions_) {
+        : ConstraintBlock(ComponentType::kTree, tree_block_types, tree_block_restrictions_) {
 
     }
 
-    int TreeBlock::get_maximum_vertex_degree() {
-        return get_constraint<VertexMaxDegreeConstraint>(Type::kVertexMaxDegree)->value();
+    TreeBlock::TreeBlock(Graph::Type graph_type, std::pair<int, int> component_number,
+            std::pair<int, int> component_order_bounds, std::pair<int, int> component_diameter_bounds,
+            int component_max_vertex_degree)
+        : TreeBlock() {
+
+        add_constraint(std::make_shared<GraphTypeConstraint>(graph_type));
+        add_constraint(std::make_shared<ComponentNumberConstraint>(component_number));
+        add_constraint(std::make_shared<ComponentOrderConstraint>(component_order_bounds));
+        add_constraint(std::make_shared<ComponentDiameterConstraint>(component_diameter_bounds));
+        add_constraint(std::make_shared<ComponentVertexMaxDegreeConstraint>(component_max_vertex_degree));
     }
 
-    std::pair<int, int> TreeBlock::get_diameter_bounds() {
-        return get_constraint<DiameterConstraint>(Type::kDiameter)->bounds();
+    // TODO: default values for this functions
+    int TreeBlock::get_component_maximum_vertex_degree() {
+        return get_constraint<ComponentVertexMaxDegreeConstraint>(Type::kComponentVertexMaxDegree)->value();
+    }
+
+    std::pair<int, int> TreeBlock::get_component_diameter_bounds() {
+        return get_constraint<ComponentDiameterConstraint>(Type::kComponentDiameter)->bounds();
     }
 }

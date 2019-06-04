@@ -153,6 +153,11 @@ namespace graph_constraint_solver {
 
     // GraphComponents
 
+    GraphComponents::GraphComponents()
+        : components_(std::vector<GraphPtr>()) {
+
+    }
+
     GraphComponents::GraphComponents(std::vector<GraphPtr> &components)
         : components_(components) {
 
@@ -175,6 +180,13 @@ namespace graph_constraint_solver {
     }
 
     void GraphComponents::add_component(GraphPtr component_ptr) {
-        return components_.push_back(component_ptr);
+        components_.push_back(component_ptr);
+    }
+
+    GraphPtr GraphComponents::get_component(int index) {
+        if (index < 0 || index + 1 > components_.size()) {
+            throw std::runtime_error("GraphComponents error: index out of range");
+        }
+        return components_.at(index);
     }
 }

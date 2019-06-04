@@ -31,8 +31,11 @@ namespace graph_constraint_solver {
         static bool in_range(long long left_bound, long long value, long long right_bound);
         static bool in_range(std::pair<long long, long long> bounds, long long value);
         static long long complete_graph_size(long long order);
+
         static bool non_empty_segments_intersection(long long l1, long long r1, long long l2, long long r2);
         static bool non_empty_segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2);
+        static std::pair<long long, long long> segments_intersection(long long l1, long long r1, long long l2, long long r2);
+        static std::pair<long long, long long> segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2);
 
         static void assert_segment_inside(long long outer_left, long long outer_right,
                 long long inner_left, long long inner_right, std::string exception_prefix);

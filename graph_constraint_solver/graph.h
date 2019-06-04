@@ -63,12 +63,13 @@ namespace graph_constraint_solver {
 
     class GraphComponents {
     public:
-        GraphComponents() = default;
+        GraphComponents();
         GraphComponents(std::vector<GraphPtr> &components);
         std::vector<GraphPtr>& components();
         std::shared_ptr<GraphComponents> clone();
         bool empty();
         void add_component(GraphPtr component_ptr);
+        GraphPtr get_component(int index);
 
     private:
         std::vector<GraphPtr> components_;

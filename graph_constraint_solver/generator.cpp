@@ -32,7 +32,7 @@ namespace graph_constraint_solver {
             return generate_two_edge_connected_block(std::static_pointer_cast<TwoEdgeConnectedBlock>(constraint_block_ptr));
         }
         if (constraint_block_ptr->component_type() == ConstraintBlock::ComponentType::kTree) {
-            return generate_tree(std::static_pointer_cast<TreeBlock>(constraint_block_ptr));
+            return generate_tree_block(std::static_pointer_cast<TreeBlock>(constraint_block_ptr));
         }
     }
 
@@ -41,7 +41,7 @@ namespace graph_constraint_solver {
         auto graph_type = constraint_block_ptr->get_graph_type();
         auto order_bounds = constraint_block_ptr->get_order_bounds();
         auto size_bounds = constraint_block_ptr->get_size_bounds();
-        auto components_number_bounds = constraint_block_ptr->get_components_number_bounds();
+        auto components_number_bounds = constraint_block_ptr->get_component_number_bounds();
 
         auto components_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
 
@@ -148,14 +148,11 @@ namespace graph_constraint_solver {
         return std::make_shared<ConstrainedGraph>();
     }
 
-    ConstrainedGraphPtr Generator::generate_tree(std::shared_ptr<TreeBlock> constraint_block_ptr) {
-        auto graph_type = constraint_block_ptr->get_graph_type();
-        auto order_bounds = constraint_block_ptr->get_order_bounds();
+    GraphPtr Generator::generate_tree(Graph::Type graph_type, std::pair<int, int> order_bounds,
+            std::pair<int, int> diameter_bounds, int max_vertex_degree) {
 
         // TODO: use TreeBroadness coefficient
         // for now only use diameter
-        auto diameter_bounds = constraint_block_ptr->get_diameter_bounds();
-        auto max_vertex_degree = constraint_block_ptr->get_maximum_vertex_degree();
 
         // TODO: maybe check all this bounds in TreeBlock
         Utils::assert_segment_inside(1, static_cast<int>(3e6), order_bounds.first, order_bounds.second,
@@ -185,10 +182,10 @@ namespace graph_constraint_solver {
             if (max_vertex_degree == 1) {
                 graph->add_edge(0, 1);
             }
-            auto components = std::make_shared<GraphComponents>();
-            components->add_component(graph);
-            return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+            return graph;
         }
+
+//        diameter_bounds.first = std::max(diameter_bounds.first, 2);
 
         long long v = max_vertex_degree;
         long long inf = order_bounds.second;
@@ -198,8 +195,11 @@ namespace graph_constraint_solver {
         // 'd' is diameter
         // 'v' is max_vertex_degree
         // function works in O(log2(order_bounds.second)) as minimal v = 3 gives us powers of (v - 1) = 2
-        auto maximum_vertices_number = [&](int d) {
+        auto maximum_vertices_number = [&](int d) -> long long {
             long long res = d + 1;
+            if (d == 0) {
+                return 1;
+            }
             if (v == 2) {
                 return res;
             }
@@ -245,20 +245,18 @@ namespace graph_constraint_solver {
         auto diameter_left = R;
         auto diameter_right = diameter_bounds.second;
         auto diameter = random.next(diameter_left, diameter_right);
+
         order_bounds.first = std::max(order_bounds.first, diameter + 1);
         order_bounds.second = std::min<int>(order_bounds.second, maximum_vertices_number(diameter));
+        auto order = random.next(order_bounds);
 
-        auto tree = generate_tree_fixed_diameter(graph_type, order_bounds, max_vertex_degree, diameter);
-        auto components = std::make_shared<GraphComponents>();
-        components->add_component(tree);
-        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+        auto tree = generate_tree_fixed_diameter(graph_type, order, diameter, max_vertex_degree);
+        return tree;
     }
 
-    GraphPtr Generator::generate_tree_fixed_diameter(Graph::Type graph_type, std::pair<int, int> order_bounds,
-            int max_vertex_degree, int diameter) {
+    GraphPtr Generator::generate_tree_fixed_diameter(Graph::Type graph_type, int order, int diameter, int max_vertex_degree) {
 
 //        std::cout << diameter << std::endl;
-        int order = random.next(order_bounds);
         GraphPtr g = std::make_shared<UndirectedGraph>(order);
         std::vector<int> level(order);
         for (int i = 0; i < diameter; ++i) {
@@ -305,30 +303,35 @@ namespace graph_constraint_solver {
         return g;
     }
 
-    ConstrainedGraphPtr Generator::generate_tree_block(ConstraintBlockPtr constraint_block_ptr) {
-        auto graph_type = constraint_block_ptr->get_graph_type();
-        auto order_bounds = constraint_block_ptr->get_order_bounds();
-        auto components_number_bounds = constraint_block_ptr->get_components_number_bounds();
-        auto components_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
+    ConstrainedGraphPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> block_ptr) {
+        auto graph_type = block_ptr->get_graph_type();
+//        auto order_bounds = block_ptr->get_order_bounds();
+        auto component_number_bounds = block_ptr->get_component_number_bounds();
+        auto component_order_bounds = block_ptr->get_component_order_bounds();
+        auto component_diameter_bounds = block_ptr->get_component_diameter_bounds();
+        auto component_max_vertex_degree = block_ptr->get_component_maximum_vertex_degree();
 
-        auto possible_to_construct = [&](int components_number, int vertices_made = 0) {
-            auto glob_left = order_bounds.first - vertices_made;
-            auto glob_right = order_bounds.second - vertices_made;
+//        auto possible_to_construct = [&](int components_number, int vertices_made = 0) {
+//            auto glob_left = order_bounds.first - vertices_made;
+//            auto glob_right = order_bounds.second - vertices_made;
+//
+//            auto comp_left = components_order_bounds.first * components_number;
+//            auto comp_right = components_order_bounds.second * components_number;
+//
+//            return Utils::non_empty_segments_intersection(glob_left, glob_right, comp_left, comp_right);
+//        };
 
-            auto comp_left = components_order_bounds.first * components_number;
-            auto comp_right = components_order_bounds.second * components_number;
+        auto components = std::make_shared<GraphComponents>();
+        int component_number = random.next(component_number_bounds);
 
-            return Utils::non_empty_segments_intersection(glob_left, glob_right, comp_left, comp_right);
-        };
-
-        for (int components_number = components_number_bounds.first; components_number <= components_number_bounds.second; ++components_number) {
-            if (!possible_to_construct(components_number)) {
-                continue;
-            }
-
+        for (int i = 0; i < component_number; ++i) {
+            components->add_component(generate_tree(graph_type, component_order_bounds, component_diameter_bounds,
+                    component_max_vertex_degree));
         }
 
-        throw std::runtime_error("Tree block generator: Given constraints cannot be satisfied");
+        return std::make_shared<ConstrainedGraph>(block_ptr, components);
+
+//        throw std::runtime_error("Tree block generator: Given constraints cannot be satisfied");
 
 //        bool remove_tree_constraint = false;
 //        if (!constraint_list_ptr->has_constraint(Constraint::Type::kTree)) {
@@ -551,7 +554,7 @@ namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr) {
         auto graph_type = constraint_block_ptr->get_graph_type();
-        auto component_number_bounds = constraint_block_ptr->get_components_number_bounds();
+        auto component_number_bounds = constraint_block_ptr->get_component_number_bounds();
         auto component_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
         auto component_size_bounds = constraint_block_ptr->template get_constraint<ComponentSizeConstraint>(Constraint::Type::kComponentSize)->bounds();
         auto component_cut_point_bounds = constraint_block_ptr->template get_constraint<ComponentCutPointConstraint>(Constraint::Type::kComponentCutPoint)->bounds();
@@ -559,15 +562,15 @@ namespace graph_constraint_solver {
         int min_subcomponent_order = 3;
 
         auto get_order_bounds = [&](int cut_points, std::pair<int, int> &order_bounds) {
-            int min_component_order = min_subcomponent_order * (cut_points + 1);
+            int min_component_order = min_subcomponent_order * (cut_points + 1) - cut_points;
             order_bounds.first = std::max(component_order_bounds.first, min_component_order);
             order_bounds.second = component_order_bounds.second;
             return order_bounds.first <= order_bounds.second;
         };
 
         auto get_size_bounds_fixed_order = [&](int cut_points, int order) {
-            int max_subcomponent_order = order - min_subcomponent_order * cut_points;
-            long long left_bound = (cut_points + 1) * min_subcomponent_order;
+            int max_subcomponent_order = order + cut_points - min_subcomponent_order * cut_points;
+            long long left_bound = std::max(order, (cut_points + 1) * min_subcomponent_order);
             long long right_bound = cut_points * min_subcomponent_order + Utils::complete_graph_size(max_subcomponent_order);
             return std::make_pair(left_bound, right_bound);
         };
@@ -618,9 +621,10 @@ namespace graph_constraint_solver {
 
             std::pair<long long, long long> size_bounds;
             get_size_bounds_range_order(cut_points, std::make_pair(order, order), size_bounds);
-            int size = random.next(size_bounds);
+            size_bounds = Utils::segments_intersection(size_bounds, component_size_bounds);
+//            int size = random.next(size_bounds);
 
-            auto component = generate_two_edge_connected_component(order, size, cut_points);
+            auto component = generate_two_edge_connected_component(order, size_bounds, cut_points);
             components->add_component(component);
         }
         return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
@@ -629,84 +633,229 @@ namespace graph_constraint_solver {
     // TODO: by the way this function looks very like 'generate_two_connected_block'
     // we construct (cut_points + 1) 2-vertex-connected components, which correspond to vertices in a tree
     // and connect them in points(cut-points), which correspond to edges in a tree
-    GraphPtr Generator::generate_two_edge_connected_component(int order, int size, int cut_points) {
+    // component size can be SMALLER than size_bounds, but not greater
+    GraphPtr Generator::generate_two_edge_connected_component(int order, std::pair<long long, long long> size_bounds, int cut_points) {
         int min_subcomponent_order = 3;
 
-        auto get_large_subcomponent_order = [&](int order, int subcomponents_number) {
-            return order - min_subcomponent_order * (subcomponents_number - 1);
-        };
+        // 1 component with order = (cut_points + 1)
+        auto tree_block = std::make_shared<TreeBlock>(Graph::Type::kUndirected, std::make_pair(1, 1),
+                std::make_pair(cut_points + 1, cut_points + 1));
 
-        auto get_size_bounds = [&](int order, int subcomponent_number) {
-            int large_subcomponent_order = get_large_subcomponent_order(order, subcomponent_number);
-            long long left_bound = order;
-            long long right_bound = min_subcomponent_order * (subcomponent_number - 1) + Utils::complete_graph_size(large_subcomponent_order);
-            return std::make_pair(left_bound, right_bound);
-        };
+        auto tree_graph = generate_tree_block(tree_block)->components_ptr()->get_component(0);
 
-        auto possible_to_construct = [&](int order, int size, int subcomponent_number) {
-            if (!order || !subcomponent_number) {
-                return !order && !size && !subcomponent_number;
-            }
-            if (order < min_subcomponent_order * subcomponent_number) {
-                return false;
-            }
-            auto size_bounds = get_size_bounds(order, subcomponent_number);
-            return Utils::in_range(size_bounds, size);
-        };
-
-        int current_order = order;
-        int current_size = size;
-        for (int subcomponent_number = cut_points + 1; subcomponent_number > 0; --subcomponent_number) {
-            int large_subcomponent = get_large_subcomponent_order(current_order, subcomponent_number);
-            int subcomponent_order;
-            int prev_subcomponent_order = min_subcomponent_order - 1;
-            int subcomponent_size;
-            int prev_subcomponent_size;
-
-            while (prev_subcomponent_order != large_subcomponent) {
-                int subcomponent_order =
-                        subcomponent_number == 1 ? current_order : random.next(prev_subcomponent_order + 1, large_subcomponent);
-
-                int next_order = current_order - subcomponent_order;
-
-                auto current_edges_bounds = get_size_bounds(current_order, subcomponent_number);
-                auto next_edges_bounds = get_size_bounds(next_order, subcomponent_number - 1);
-
-                int size_left_bound = std::max<long long>(subcomponent_order, current_size - next_edges_bounds.second);
-                int size_right_bound = std::min<long long>(Utils::complete_graph_size(subcomponent_order),
-                                                           current_size - next_edges_bounds.first);
-
-                if (size_left_bound > size_right_bound) {
-                    prev_subcomponent_order = subcomponent_order;
-                    continue;
-                }
-
-                bool possible = false;
-                prev_subcomponent_size = size_left_bound - 1;
-                while (prev_subcomponent_size != size_right_bound) {
-                    subcomponent_size = random.next(prev_subcomponent_size + 1, size_right_bound);
-                    if (possible_to_construct(next_order, current_size - subcomponent_size, subcomponent_number - 1)) {
-                        possible = true;
-                        break;
-                    }
-                    prev_subcomponent_size = subcomponent_size;
-                }
-
-                if (possible) {
-                    break;
-                }
-                prev_subcomponent_order = subcomponent_order;
-            }
-
-            if (prev_subcomponent_order == large_subcomponent) {
-                throw std::runtime_error("debug this");
-            }
-
-            auto component = generate_two_connected_component(subcomponent_order, subcomponent_size,
-                                                              std::make_pair(subcomponent_order, subcomponent_order));
-
-            current_order -= subcomponent_order;
-            current_size -= subcomponent_size;
+        std::vector<int> subcomponents_order(cut_points + 1);
+        std::pair<long long, long long> current_size_bounds;
+        int subcomponents_order_sum = 0;
+        for (int i = 0; i <= cut_points; ++i) {
+            subcomponents_order[i] = std::max<int>(min_subcomponent_order, tree_graph->adjacency_list().at(i).size());
+            subcomponents_order_sum += subcomponents_order[i];
+            current_size_bounds.first += subcomponents_order[i];
+            current_size_bounds.second += Utils::complete_graph_size(subcomponents_order[i]);
         }
+
+        int resid_order = order - subcomponents_order_sum + cut_points;
+        for (int i = 0; i < resid_order; ++i) {
+            int index = random.next(cut_points + 1);
+            current_size_bounds.first++;
+            current_size_bounds.second -= Utils::complete_graph_size(subcomponents_order[index]);
+            subcomponents_order[index]++;
+            current_size_bounds.second += Utils::complete_graph_size(subcomponents_order[index]);
+        }
+
+        bool pick_minimum_size = current_size_bounds.first > size_bounds.second;
+        bool pick_maximum_size = current_size_bounds.second < size_bounds.first;
+        GraphComponentsPtr subcomponents = std::make_shared<GraphComponents>();
+
+        for (int i = 0; i <= cut_points; ++i) {
+            std::pair<long long, long long> subcomponent_size_bounds;
+            subcomponent_size_bounds.first = subcomponents_order[i];
+            subcomponent_size_bounds.second = Utils::complete_graph_size(subcomponents_order[i]);
+
+            current_size_bounds.first -= subcomponent_size_bounds.first;
+            current_size_bounds.second -= subcomponent_size_bounds.second;
+
+            if (pick_minimum_size) {
+                subcomponent_size_bounds.second = subcomponent_size_bounds.first;
+            }
+            else if (pick_maximum_size) {
+                subcomponent_size_bounds.first = subcomponent_size_bounds.second;
+            }
+            else {
+                subcomponent_size_bounds.first = std::max(subcomponent_size_bounds.first,
+                                                          size_bounds.first - current_size_bounds.second);
+
+                subcomponent_size_bounds.second = std::min(subcomponent_size_bounds.second,
+                                                           size_bounds.second - current_size_bounds.first);
+
+                if (subcomponent_size_bounds.first > subcomponent_size_bounds.second) {
+                    throw std::runtime_error("debug this");
+                }
+            }
+
+            long long subcomponent_size = random.next(subcomponent_size_bounds);
+            size_bounds.first -= subcomponent_size;
+            size_bounds.second -= subcomponent_size;
+
+            auto subcomponent = generate_two_connected_component(subcomponents_order[i], subcomponent_size,
+                    std::make_pair(subcomponents_order[i], subcomponents_order[i]));
+
+            subcomponents->add_component(subcomponent);
+        }
+
+        GraphPtr graph = std::make_shared<UndirectedGraph>(order);
+        connect_components_in_vertices(graph, subcomponents, tree_graph);
+        return graph;
+//
+//
+//        auto get_large_subcomponent_order = [&](int order, int subcomponents_number) {
+//            return order - min_subcomponent_order * (subcomponents_number - 1);
+//        };
+//
+//        auto get_size_bounds = [&](int order, int subcomponent_number) {
+//            int large_subcomponent_order = get_large_subcomponent_order(order, subcomponent_number);
+//            long long left_bound = order;
+//            long long right_bound = min_subcomponent_order * (subcomponent_number - 1) + Utils::complete_graph_size(large_subcomponent_order);
+//            return std::make_pair(left_bound, right_bound);
+//        };
+//
+//        auto possible_to_construct = [&](int order, int size, int subcomponent_number) {
+//            if (!order || !subcomponent_number) {
+//                return !order && !size && !subcomponent_number;
+//            }
+//            if (order < min_subcomponent_order * subcomponent_number) {
+//                return false;
+//            }
+//            auto size_bounds = get_size_bounds(order, subcomponent_number);
+//            return Utils::in_range(size_bounds, size);
+//        };
+//
+//        if (!possible_to_construct(order, size, cut_points)) {
+//            throw std::invalid_argument("generate_two_edge_connected_component: unsatisfiable constraints");
+//        }
+//
+//        int current_order = order;
+//        int current_size = size;
+//        for (int subcomponent_number = cut_points + 1; subcomponent_number > 0; --subcomponent_number) {
+//            int large_subcomponent = get_large_subcomponent_order(current_order, subcomponent_number);
+//            int subcomponent_order;
+//            int prev_subcomponent_order = min_subcomponent_order - 1;
+//            int subcomponent_size;
+//            int prev_subcomponent_size;
+//
+//            while (prev_subcomponent_order != large_subcomponent) {
+//                int subcomponent_order =
+//                        subcomponent_number == 1 ? current_order : random.next(prev_subcomponent_order + 1, large_subcomponent);
+//
+//                int next_order = current_order - subcomponent_order;
+//
+//                auto current_edges_bounds = get_size_bounds(current_order, subcomponent_number);
+//                auto next_edges_bounds = get_size_bounds(next_order, subcomponent_number - 1);
+//
+//                int size_left_bound = std::max<long long>(subcomponent_order, current_size - next_edges_bounds.second);
+//                int size_right_bound = std::min<long long>(Utils::complete_graph_size(subcomponent_order),
+//                                                           current_size - next_edges_bounds.first);
+//
+//                if (size_left_bound > size_right_bound) {
+//                    prev_subcomponent_order = subcomponent_order;
+//                    continue;
+//                }
+//
+//                bool possible = false;
+//                prev_subcomponent_size = size_left_bound - 1;
+//                while (prev_subcomponent_size != size_right_bound) {
+//                    subcomponent_size = random.next(prev_subcomponent_size + 1, size_right_bound);
+//                    if (possible_to_construct(next_order, current_size - subcomponent_size, subcomponent_number - 1)) {
+//                        possible = true;
+//                        break;
+//                    }
+//                    prev_subcomponent_size = subcomponent_size;
+//                }
+//
+//                if (possible) {
+//                    break;
+//                }
+//                prev_subcomponent_order = subcomponent_order;
+//            }
+//
+//            if (prev_subcomponent_order == large_subcomponent) {
+//                throw std::runtime_error("debug this");
+//            }
+//
+//            auto component = generate_two_connected_component(subcomponent_order, subcomponent_size,
+//                                                              std::make_pair(subcomponent_order, subcomponent_order));
+//
+//            current_order -= subcomponent_order;
+//            current_size -= subcomponent_size;
+//        }
+    }
+
+    void Generator::connect_components_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
+            std::vector<std::vector<std::pair<int, int>>> &selected_vertices, int &next_free_index,
+            int current_component_index, int previous_component_index, int link_vertex) {
+
+        int our_link = previous_component_index == -1 ? -1 : selected_vertices[current_component_index][0].first;
+        if (previous_component_index != -1) {
+            selected_vertices[current_component_index][0].second = link_vertex;
+        }
+
+        auto local_index_to_global = [&](int local_index) {
+            if (local_index == our_link) {
+                return link_vertex;
+            }
+            int global_index = next_free_index + local_index;
+            if (our_link != -1 && local_index > our_link) {
+                --global_index;
+            }
+            return global_index;
+        };
+
+        for (int i = previous_component_index != -1; i < selected_vertices[current_component_index].size(); ++i) {
+            selected_vertices[current_component_index][i].second =
+                    local_index_to_global(selected_vertices[current_component_index][i].first);
+        }
+
+        auto component = components->components().at(current_component_index);
+        for (int i = 0; i < component->order(); ++i) {
+            for (int j : component->adjacency_list().at(i)) {
+                if (i < j) {
+                    int ii = local_index_to_global(i);
+                    int jj = local_index_to_global(j);
+                    graph->add_edge(ii, jj);
+                }
+            }
+        }
+
+        next_free_index += component->order() - (previous_component_index != -1);
+
+        auto skeleton_edges = skeleton->adjacency_list().at(current_component_index);
+        int next_free_selected_vertex = (previous_component_index !=- 1);
+
+        for (int i = 0; i < skeleton_edges.size(); ++i) {
+            if (skeleton_edges[i] != previous_component_index) {
+                connect_components_dfs(graph, components, skeleton, selected_vertices, next_free_index,
+                        skeleton_edges[i], current_component_index,
+                        selected_vertices[current_component_index][next_free_selected_vertex++].second);
+            }
+        }
+    }
+
+    // 'skeleton' is a tree with components.size() vertices
+    void Generator::connect_components_in_vertices(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton) {
+        std::vector<char> used(graph->order());
+//         selected_vertices[i][0] stores current index in vector selected_vertices[i]
+        std::vector<std::vector<std::pair<int, int>>> selected_vertices(components->components().size());
+        for (int i = 0; i < selected_vertices.size(); ++i) {
+            int degree = skeleton->adjacency_list().at(i).size();
+            int order = components->components().at(i)->order();
+            // generate 'degree' different numbers - (cut-points) common vertices between different components
+            int left_bound = 0;
+            for (int j = degree; j > 0; --j) {
+                int current_index = random.next(left_bound, order - j);
+                selected_vertices[i].emplace_back(current_index, current_index);
+                left_bound = current_index + 1;
+            }
+        }
+        int next_free_index = 0;
+        connect_components_dfs(graph, components, skeleton, selected_vertices, next_free_index, 0, -1, -1);
     }
 }

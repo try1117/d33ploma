@@ -10,14 +10,14 @@ namespace graph_constraint_solver {
 
     const std::unordered_map<Constraint::Type, std::string> Constraint::type_to_name_({
         {Type::kNone, "None"},
-        {Type::kGraphType, "GraphType"},
+        {Type::kGraphType, "Graph-type"},
         {Type::kOrder, "Order"},
         {Type::kSize, "Size"},
         {Type::kComponentNumber, "Number-of-components"},
         {Type::kComponentOrder, "Components-order"},
-        {Type::kDiameter, "Diameter"},
-        {Type::kTreeBroadness, "Tree-broadness"},
-        {Type::kVertexMaxDegree, "Vertex-maximum-degree"},
+        {Type::kComponentDiameter, "Components-diameter"},
+//        {Type::kTreeBroadness, "Tree-broadness"},
+        {Type::kComponentVertexMaxDegree, "Components-vertex-maximum-degree"},
         {Type::kBridge, "Bridge"},
         {Type::kCutPoint, "CutPoint"},
     });
@@ -74,13 +74,13 @@ namespace graph_constraint_solver {
         return SatisfactionVerdict::kImpossible;
     }
 
-    // VertexMaxDegreeConstraint
+    // ComponentVertexMaxDegreeConstraint
 
-    ConstraintPtr VertexMaxDegreeConstraint::clone() {
-        return std::make_shared<VertexMaxDegreeConstraint>(*this);
+    ConstraintPtr ComponentVertexMaxDegreeConstraint::clone() {
+        return std::make_shared<ComponentVertexMaxDegreeConstraint>(*this);
     }
 
-    Constraint::SatisfactionVerdict VertexMaxDegreeConstraint::check() {
+    Constraint::SatisfactionVerdict ComponentVertexMaxDegreeConstraint::check() {
         // TODO: check graph ...
         return SatisfactionVerdict::kOK;
     }
@@ -160,13 +160,13 @@ namespace graph_constraint_solver {
         return Constraint::SatisfactionVerdict::kOK;
     }
 
-    // DiameterConstraint
+    // ComponentDiameterConstraint
 
-    ConstraintPtr DiameterConstraint::clone() {
-        return std::make_shared<DiameterConstraint>(*this);
+    ConstraintPtr ComponentDiameterConstraint::clone() {
+        return std::make_shared<ComponentDiameterConstraint>(*this);
     }
 
-    int DiameterConstraint::value() {
+    int ComponentDiameterConstraint::value() {
         // TODO: count diameter
         return 0;
     }
