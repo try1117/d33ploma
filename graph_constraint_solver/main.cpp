@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     std::pair<int, int> component_number = {1, 1};
     std::pair<int, int> component_order = {5, 20};
     std::pair<int, int> component_size = {10, 50};
-    std::pair<int, int> component_cut_point = {3, 3};
+    std::pair<int, int> component_cut_point = {7, 20};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     auto constraints = std::make_shared<graph_constraint_solver::TwoEdgeConnectedBlock>();

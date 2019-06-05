@@ -596,6 +596,10 @@ namespace graph_constraint_solver {
             }
         }
 
+        if (suitable_number_of_cut_points.empty()) {
+            throw std::invalid_argument("generate_two_edge_connected_component: unsatisfiable constraints");
+        }
+
         int component_number = random.next(component_number_bounds);
         GraphComponentsPtr components = std::make_shared<GraphComponents>();
 
@@ -637,9 +641,12 @@ namespace graph_constraint_solver {
     GraphPtr Generator::generate_two_edge_connected_component(int order, std::pair<long long, long long> size_bounds, int cut_points) {
         int min_subcomponent_order = 3;
 
+        int max_vertex_degree = (order + cut_points) / (cut_points + 1);
         // 1 component with order = (cut_points + 1)
         auto tree_block = std::make_shared<TreeBlock>(Graph::Type::kUndirected, std::make_pair(1, 1),
-                std::make_pair(cut_points + 1, cut_points + 1));
+                std::make_pair(cut_points + 1, cut_points + 1),
+                std::make_pair(0, cut_points),
+                max_vertex_degree);
 
         auto tree_graph = generate_tree_block(tree_block)->components_ptr()->get_component(0);
 
