@@ -31,19 +31,32 @@ namespace graph_constraint_solver {
         if (constraint_block_ptr->component_type() == ConstraintBlock::ComponentType::kTwoEdgeConnected) {
             return generate_two_edge_connected_block(std::static_pointer_cast<TwoEdgeConnectedBlock>(constraint_block_ptr));
         }
+        if (constraint_block_ptr->component_type() == ConstraintBlock::ComponentType::kConnected) {
+            return generate_connected_block(std::static_pointer_cast<ConnectedBlock>(constraint_block_ptr));
+        }
         if (constraint_block_ptr->component_type() == ConstraintBlock::ComponentType::kTree) {
             return generate_tree_block(std::static_pointer_cast<TreeBlock>(constraint_block_ptr));
         }
     }
 
+    ConstrainedGraphPtr Generator::generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr) {
+        auto graph_type = constraint_block_ptr->get_graph_type();
+        auto component_number_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentNumber>();
+        auto component_order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentOrder>();
+        auto component_size_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentSize>();
+        auto component_cut_point_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentCutPoint>();
+        auto component_bridge_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentBridge>();
+
+
+    }
+
     ConstrainedGraphPtr Generator::generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr) {
         // TODO: default values
         auto graph_type = constraint_block_ptr->get_graph_type();
-        auto order_bounds = constraint_block_ptr->get_order_bounds();
-        auto size_bounds = constraint_block_ptr->get_size_bounds();
-        auto components_number_bounds = constraint_block_ptr->get_component_number_bounds();
-
-        auto components_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
+        auto order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kOrder>();
+        auto size_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kSize>();
+        auto components_number_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentNumber>();
+        auto components_order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentOrder>();
 
         for (int iter = 0; iter < 100; ++iter) {
             auto order = random.next(order_bounds);
@@ -303,13 +316,13 @@ namespace graph_constraint_solver {
         return g;
     }
 
-    ConstrainedGraphPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> block_ptr) {
-        auto graph_type = block_ptr->get_graph_type();
+    ConstrainedGraphPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr) {
+        auto graph_type = constraint_block_ptr->get_graph_type();
 //        auto order_bounds = block_ptr->get_order_bounds();
-        auto component_number_bounds = block_ptr->get_component_number_bounds();
-        auto component_order_bounds = block_ptr->get_component_order_bounds();
-        auto component_diameter_bounds = block_ptr->get_component_diameter_bounds();
-        auto component_max_vertex_degree = block_ptr->get_component_maximum_vertex_degree();
+        auto component_number_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentNumber>();
+        auto component_order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentOrder>();
+        auto component_diameter_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentDiameter>();
+        auto component_max_vertex_degree = constraint_block_ptr->get_component_maximum_vertex_degree();
 
 //        auto possible_to_construct = [&](int components_number, int vertices_made = 0) {
 //            auto glob_left = order_bounds.first - vertices_made;
@@ -329,7 +342,7 @@ namespace graph_constraint_solver {
                     component_max_vertex_degree));
         }
 
-        return std::make_shared<ConstrainedGraph>(block_ptr, components);
+        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
 
 //        throw std::runtime_error("Tree block generator: Given constraints cannot be satisfied");
 
@@ -357,8 +370,8 @@ namespace graph_constraint_solver {
     }
 
     // TODO: rename and rewrite, it's actually build random connected component
-    ConstrainedGraphPtr Generator::generate_single_component(ConstraintBlockPtr constraint_list_ptr) {
-
+//    ConstrainedGraphPtr Generator::generate_single_component(ConstraintBlockPtr constraint_list_ptr) {
+//
 //        // TODO: use not only left_bound but full range
 //        auto order = constraint_list_ptr->template get_constraint<OrderConstraint>(Constraint::Type::kOrder)->bounds().first;
 //
@@ -370,7 +383,7 @@ namespace graph_constraint_solver {
 //        };
 //        auto result = go_with_the_winners(tree_generator, go_build_residue, true);
 //        return result;
-    }
+//    }
 
     // TODO: create class TwoConnectedGenerator ???
     // actually in the future I'll need some class ComponentGenerator with stuff from this function
@@ -554,10 +567,10 @@ namespace graph_constraint_solver {
 
     ConstrainedGraphPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr) {
         auto graph_type = constraint_block_ptr->get_graph_type();
-        auto component_number_bounds = constraint_block_ptr->get_component_number_bounds();
-        auto component_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>(Constraint::Type::kComponentOrder)->bounds();
-        auto component_size_bounds = constraint_block_ptr->template get_constraint<ComponentSizeConstraint>(Constraint::Type::kComponentSize)->bounds();
-        auto component_cut_point_bounds = constraint_block_ptr->template get_constraint<ComponentCutPointConstraint>(Constraint::Type::kComponentCutPoint)->bounds();
+        auto component_number_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentNumber>();
+        auto component_order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentOrder>();
+        auto component_size_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentSize>();
+        auto component_cut_point_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentCutPoint>();
 
         int min_subcomponent_order = 3;
 

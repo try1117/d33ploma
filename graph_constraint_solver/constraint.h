@@ -50,6 +50,8 @@ namespace graph_constraint_solver {
 
         Type type();
         const std::string type_name();
+        static const std::string type_to_name(Type type);
+
         GraphPtr graph_ptr();
         virtual void bind_graph(GraphPtr graph_ptr);
 

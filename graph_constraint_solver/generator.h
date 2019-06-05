@@ -18,9 +18,9 @@ namespace graph_constraint_solver {
 
         ConstrainedGraphPtr generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr);
         ConstrainedGraphPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr);
-        ConstrainedGraphPtr generate_tree_block(std::shared_ptr<TreeBlock> block_ptr);
-
-        ConstrainedGraphPtr generate_single_component(ConstraintBlockPtr constraint_list_ptr);
+        ConstrainedGraphPtr generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr);
+        ConstrainedGraphPtr generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr);
+//        ConstrainedGraphPtr generate_single_component(ConstraintBlockPtr constraint_list_ptr);
 
     private:
         ConstrainedGraphPtr go_with_the_winners(GraphGenerator initial_graph_generator, GoNext go_next, bool to_print = false,

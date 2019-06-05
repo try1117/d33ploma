@@ -46,12 +46,15 @@ namespace graph_constraint_solver {
 
         ComponentType component_type();
         const std::string component_type_name();
-
         Graph::Type get_graph_type();
-        std::pair<int, int> get_order_bounds();
-        std::pair<int, int> get_size_bounds();
-        std::pair<int, int> get_component_number_bounds();
-        std::pair<int, int> get_component_order_bounds();
+
+        template <Constraint::Type constraint_type>
+        std::pair<int, int> get_constraint_bounds() {
+            if (!constraints_.count(constraint_type)) {
+                throw std::out_of_range("get_constraint_bounds error: unable to access " + Constraint::type_to_name(constraint_type));
+            }
+            return std::static_pointer_cast<BoundedValueConstraint<int, constraint_type>>(constraints_[constraint_type])->bounds();
+        }
 
         // TODO: parse
         void parse_JSON(std::string filepath) {}

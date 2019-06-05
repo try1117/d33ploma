@@ -47,6 +47,10 @@ namespace graph_constraint_solver {
         return Constraint::type_to_name_.at(type_);
     }
 
+    const std::string Constraint::type_to_name(Type type) {
+        return Constraint::type_to_name_.at(type);
+    }
+
     GraphPtr Constraint::graph_ptr() {
         return graph_ptr_;
     }
