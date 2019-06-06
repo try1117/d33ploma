@@ -118,6 +118,15 @@ namespace graph_constraint_solver {
 
         virtual T value() = 0;
 
+        void set_bounds(T left_bound, T right_bound) {
+            left_bound_ = left_bound;
+            right_bound_ = right_bound;
+        }
+
+        void set_bounds(std::pair<T, T> bounds) {
+            set_bounds(bounds.first, bounds.second);
+        }
+
         std::pair<T, T> bounds() {
             return std::pair(left_bound_, right_bound_);
         }

@@ -47,7 +47,106 @@ namespace graph_constraint_solver {
         auto component_cut_point_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentCutPoint>();
         auto component_bridge_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentBridge>();
 
+        component_cut_point_bounds.second = std::min(component_cut_point_bounds.second, component_order_bounds.second);
+        component_bridge_bounds.second = std::min(component_bridge_bounds.second, component_size_bounds.second);
+        component_bridge_bounds.second = std::min(component_bridge_bounds.second, component_order_bounds.second - 1);
 
+        if (Utils::invalid_segment(component_cut_point_bounds) || Utils::invalid_segment(component_bridge_bounds)) {
+            throw std::runtime_error("generate_connected_component error: given constraints cannot be satisfied");
+        }
+
+        std::vector<int> suitable_number_of_bridges;
+        if (component_bridge_bounds.first == 0) {
+            auto two_edge_connected_block_ptr = constraint_block_ptr->template clone<TwoEdgeConnectedBlock>();
+            auto component_number_constraint = two_edge_connected_block_ptr->template
+                    get_constraint<ComponentNumberConstraint>(Constraint::Type::kComponentNumber);
+            component_number_constraint->set_bounds(1, 1);
+            try {
+                if (generate_two_edge_connected_block(two_edge_connected_block_ptr, true)) {
+                    suitable_number_of_bridges.push_back(0);
+                }
+            }
+            catch (...) {}
+        }
+
+        for (int bridges = std::max(1, component_bridge_bounds.first); bridges <= component_bridge_bounds.second; ++bridges) {
+            // first we need to generate some tree with 'bridges' edges
+            // right_bound of 'initial_cut_point_bounds' is a maximum number of inner vertices we allowed to have in a tree
+            std::pair<int, int> initial_cut_point_bounds =
+                    {std::min(bridges - 1, 1), std::min(bridges - 1, component_cut_point_bounds.second)};
+            int initial_order = bridges + 1;
+            int initial_size = bridges;
+
+            if (initial_cut_point_bounds.second == 0) {
+                if (bridges == 1 && Utils::in_range(component_order_bounds, 2) &&
+                        Utils::in_range(component_size_bounds, 1)) {
+                    suitable_number_of_bridges.push_back(1);
+                }
+                continue;
+            }
+
+            // now we need to check whether we can or not ...
+            int need_order = std::max(0, component_order_bounds.first - initial_order);
+            int need_size = std::max(0, component_size_bounds.first - initial_size);
+
+            int can_order = component_order_bounds.second - initial_order;
+            int can_size = component_size_bounds.second - initial_size;
+
+            Utils::LongPair current_order_bounds = {need_order, can_order};
+            Utils::LongPair current_order_to_size_bounds = {need_order, Utils::complete_graph_size(can_order)};
+            Utils::LongPair current_size_bounds = {need_size, can_size};
+
+            // REMEMBER: 'order' step from 1 to 3 (can't go from 1 to 2)
+
+            if (!Utils::non_empty_segments_intersection(current_order_to_size_bounds, current_size_bounds)) {
+                continue;
+            }
+
+            int need_cut_point = component_cut_point_bounds.first;
+            if (need_cut_point <= initial_cut_point_bounds.second) {
+                suitable_number_of_bridges.push_back(bridges);
+            }
+            else {
+                int to_add = 2 * (need_cut_point - bridges + 1);
+                if (to_add > can_order || to_add > can_size) {
+                    continue;
+                }
+                // TODO: check whether it's possible to satisfy SizeConstraints
+//                if ()
+                suitable_number_of_bridges.push_back(bridges);
+            }
+        }
+
+        if (suitable_number_of_bridges.empty()) {
+            throw std::runtime_error("generate_connected_component error: given constraints cannot be satisfied");
+        }
+
+        auto generate_component = [&](int bridges) -> GraphPtr {
+            if (bridges == 0) {
+                auto two_edge_connected_block_ptr = constraint_block_ptr->template clone<TwoEdgeConnectedBlock>();
+                auto component_number_constraint = two_edge_connected_block_ptr->template
+                        get_constraint<ComponentNumberConstraint>(Constraint::Type::kComponentNumber);
+                component_number_constraint->set_bounds(1, 1);
+
+                auto block = generate_two_edge_connected_block(two_edge_connected_block_ptr);
+                return block->components_ptr()->get_component(0);
+            }
+            if (bridges == 1) {
+                // TODO: directed/undirected
+                auto graph = std::make_shared<UndirectedGraph>(2);
+                graph->add_edge(0, 1);
+                return graph;
+            }
+            return generate_connected_component(component_order_bounds, component_size_bounds, component_cut_point_bounds, bridges);
+        };
+
+        auto component_number = random.next(component_number_bounds);
+        auto components = std::make_shared<GraphComponents>();
+        for (int i = 0; i < component_number; ++i) {
+            int bridges = suitable_number_of_bridges.at(random.next(suitable_number_of_bridges.size()));
+            components->add_component(generate_component(bridges));
+        }
+        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
     }
 
     ConstrainedGraphPtr Generator::generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr) {
@@ -176,7 +275,7 @@ namespace graph_constraint_solver {
                 "Tree generator: given maximum vertex degree");
 
         auto bad = []() {
-            throw std::runtime_error("Tree generator: Given constraints cannot be satisfied");
+            throw std::runtime_error("Tree generator error: given constraints cannot be satisfied");
         };
 
         if (diameter_bounds.first >= order_bounds.second) {
@@ -314,6 +413,74 @@ namespace graph_constraint_solver {
             }
         }
         return g;
+    }
+
+    GraphPtr Generator::generate_tree_fixed_leaves_number(int order, int leaves_number, double merge_probability) {
+        if (0 > merge_probability || merge_probability > 1) {
+            throw std::invalid_argument("generate_tree_fixed_leaves_number error: given 'merge_probability' = " +
+            std::to_string(merge_probability) + " should be in range [0, 1]");
+        }
+        if (order < 1) {
+            throw std::invalid_argument("generate_tree_fixed_leaves_number error: given order " + std::to_string(order) +
+            " is not positive");
+        }
+        if (order == 1) {
+            return std::make_shared<UndirectedGraph>(1);
+        }
+        if (order == 2) {
+            auto graph = std::make_shared<UndirectedGraph>(2);
+            graph->add_edge(0, 1);
+            return graph;
+        }
+        if (!Utils::in_range(2, leaves_number, order - 1)) {
+            throw std::invalid_argument("generate_tree_fixed_leaves_number error: given 'leaves_number' = " +
+            std::to_string(leaves_number) + " should be in range " + Utils::segment_to_string(2, order - 1));
+        }
+
+        auto graph = std::make_shared<UndirectedGraph>(order);
+        int root = 0;
+
+        DSU branch_dsu(leaves_number, true);
+        std::vector<int> confirmed_branches;
+        std::vector<char> branch_head(leaves_number);
+        std::iota(branch_head.begin(), branch_head.end(), 0);
+
+        int next_free_vertex = leaves_number;
+        int merges_cnt = leaves_number - 1;
+        int go_up_cnt = order - leaves_number;
+
+        auto pick_neighbor = [&](int v) {
+            auto seg = branch_dsu.get_segment(v);
+            if (seg.first != 0) {
+                return seg.first - 1;
+            }
+            else {
+                return seg.first + 1;
+            }
+        };
+
+        for (int i = 0; i < order - 1; ++i) {
+            bool its_merge_time = random.next() < merge_probability;
+            if (its_merge_time && merges_cnt && !confirmed_branches.empty() || !go_up_cnt) {
+                --merges_cnt;
+                auto branch_idx = confirmed_branches.at(random.next(confirmed_branches.size()));
+                auto neighbor = pick_neighbor(branch_idx);
+                graph->add_edge(branch_head[branch_idx], branch_head[neighbor]);
+                branch_dsu.unite(branch_idx, neighbor);
+            }
+            else {
+                --go_up_cnt;
+                auto branch_idx = branch_dsu.get_parent(random.next(leaves_number));
+                graph->add_edge(branch_head[branch_idx], next_free_vertex);
+                if (branch_head[branch_idx] == branch_idx) {
+                    confirmed_branches.push_back(branch_idx);
+                }
+                branch_head[branch_idx] = next_free_vertex;
+                ++next_free_vertex;
+            }
+        }
+
+        return graph;
     }
 
     ConstrainedGraphPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr) {
@@ -565,7 +732,9 @@ namespace graph_constraint_solver {
         return std::make_shared<UndirectedGraph>(order, result);
     }
 
-    ConstrainedGraphPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr) {
+    ConstrainedGraphPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
+            bool check_satisfiability_only) {
+
         auto graph_type = constraint_block_ptr->get_graph_type();
         auto component_number_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentNumber>();
         auto component_order_bounds = constraint_block_ptr->template get_constraint_bounds<Constraint::Type::kComponentOrder>();
@@ -610,7 +779,11 @@ namespace graph_constraint_solver {
         }
 
         if (suitable_number_of_cut_points.empty()) {
-            throw std::invalid_argument("generate_two_edge_connected_component: unsatisfiable constraints");
+            throw std::runtime_error("generate_two_edge_connected_component error: given constraints cannot be satisfied");
+        }
+
+        if (check_satisfiability_only) {
+            return nullptr;
         }
 
         int component_number = random.next(component_number_bounds);
@@ -807,6 +980,48 @@ namespace graph_constraint_solver {
 //            current_order -= subcomponent_order;
 //            current_size -= subcomponent_size;
 //        }
+    }
+
+    GraphPtr Generator::generate_connected_component(Utils::IntPair order_bounds, Utils::LongPair size_bounds,
+            Utils::IntPair cut_point_bounds, int bridges) {
+
+        // ALERT COPY-PASTE
+        int initial_order = bridges + 1;
+        int initial_size = bridges;
+
+        int need_order = std::max(0, order_bounds.first - initial_order);
+        int need_size = std::max<long long>(0, size_bounds.first - initial_size);
+
+        int can_order = order_bounds.second - initial_order;
+        int can_size = size_bounds.second - initial_size;
+
+        Utils::LongPair current_order_bounds = {need_order, can_order};
+        Utils::LongPair current_order_to_size_bounds = {need_order, Utils::complete_graph_size(can_order)};
+        Utils::LongPair current_size_bounds = {need_size, can_size};
+
+        std::vector<int> suitable_initial_cut_points;
+        // 'k' is a number of inner vertices in initial tree
+        for (int k = 1; k <= std::min(bridges - 1, cut_point_bounds.second); ++k) {
+            int need_cut_point = std::max(0, cut_point_bounds.first - k);
+            if (need_cut_point <= 0) {
+                suitable_initial_cut_points.push_back(k);
+            }
+            else {
+                int to_add = 2 * (need_cut_point - bridges + 1);
+                if (to_add <= can_order || to_add <= can_size) {
+                    suitable_initial_cut_points.push_back(k);
+                }
+            }
+        }
+
+        if (suitable_initial_cut_points.empty()) {
+            throw std::runtime_error("generate_connected_component error: given constraints cannot be satisfied");
+        }
+
+        int inner_vertices = suitable_initial_cut_points.at(random.next(suitable_initial_cut_points.size()));
+        int leaves = bridges + 1 - inner_vertices;
+        auto tree = generate_tree_fixed_leaves_number(bridges + 1, leaves, random.next());
+        int tmp = 1;
     }
 
     void Generator::connect_components_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,

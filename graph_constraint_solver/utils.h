@@ -27,23 +27,28 @@ namespace graph_constraint_solver {
 
     class Utils {
     public:
+        using ll = long long;
+        using IntPair = std::pair<int, int>;
+        using LongPair = std::pair<long long, long long>;
+
         static double timeit(std::function<void()> f);
-        static bool in_range(long long left_bound, long long value, long long right_bound);
-        static bool in_range(std::pair<long long, long long> bounds, long long value);
-        static long long complete_graph_size(long long order);
+        static bool in_range(ll left_bound, ll value, ll right_bound);
+        static bool in_range(LongPair bounds, ll value);
+        static ll complete_graph_size(ll order);
 
-        static bool non_empty_segments_intersection(long long l1, long long r1, long long l2, long long r2);
-        static bool non_empty_segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2);
-        static std::pair<long long, long long> segments_intersection(long long l1, long long r1, long long l2, long long r2);
-        static std::pair<long long, long long> segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2);
+        static bool invalid_segment(LongPair segment);
+        static bool non_empty_segments_intersection(ll l1, ll r1, ll l2, ll r2);
+        static bool non_empty_segments_intersection(LongPair p1, LongPair p2);
+        static LongPair segments_intersection(ll l1, ll r1, ll l2, ll r2);
+        static LongPair segments_intersection(LongPair p1, LongPair p2);
 
-        static void assert_segment_inside(long long outer_left, long long outer_right,
-                long long inner_left, long long inner_right, std::string exception_prefix);
+        static void assert_segment_inside(ll outer_left, ll outer_right, ll inner_left, ll inner_right,
+                std::string exception_prefix);
 
-        static void assert_value_inside(long long outer_left, long long outer_right,
-                long long inner_value, std::string exception_text);
+        static void assert_value_inside(ll outer_left, ll outer_right, ll inner_value,
+                std::string exception_prefix);
 
-        static std::string segment_to_string(long long left_bound, long long right_bound);
+        static std::string segment_to_string(ll left_bound, ll right_bound);
     };
 
     // TODO: maybe use boost ???

@@ -56,6 +56,17 @@ namespace graph_constraint_solver {
             return std::static_pointer_cast<BoundedValueConstraint<int, constraint_type>>(constraints_[constraint_type])->bounds();
         }
 
+        template <typename T>
+        std::shared_ptr<T> clone() {
+            auto result = std::make_shared<T>();
+            for (auto &p : constraints_) {
+                if (result->available_constraint_types_.count(p.first)) {
+                    result->add_constraint(p.second->clone());
+                }
+            }
+            return result;
+        }
+
         // TODO: parse
         void parse_JSON(std::string filepath) {}
         void parse_XML(std::string filepath) {}

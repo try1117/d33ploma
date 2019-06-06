@@ -50,19 +50,23 @@ namespace graph_constraint_solver {
         return res.count();
     }
 
-    bool Utils::in_range(long long left_bound, long long value, long long right_bound) {
+    bool Utils::in_range(ll left_bound, ll value, ll right_bound) {
         return left_bound <= value && value <= right_bound;
     }
 
-    bool Utils::in_range(std::pair<long long, long long> bounds, long long value) {
+    bool Utils::in_range(LongPair bounds, ll value) {
         return in_range(bounds.first, value, bounds.second);
     }
 
-    long long Utils::complete_graph_size(long long order) {
+    Utils::ll Utils::complete_graph_size(ll order) {
         return order * (order - 1) / 2;
     }
 
-    bool Utils::non_empty_segments_intersection(long long l1, long long r1, long long l2, long long r2) {
+    bool Utils::invalid_segment(LongPair segment) {
+        return segment.first > segment.second;
+    }
+
+    bool Utils::non_empty_segments_intersection(ll l1, ll r1, ll l2, ll r2) {
         if (l1 > l2 || l1 == l2 && r1 > r2) {
             std::swap(l1, l2);
             std::swap(r1, r2);
@@ -70,11 +74,11 @@ namespace graph_constraint_solver {
         return l2 <= r1;
     }
 
-    bool Utils::non_empty_segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2) {
+    bool Utils::non_empty_segments_intersection(LongPair p1, LongPair p2) {
         return non_empty_segments_intersection(p1.first, p1.second, p2.first, p2.second);
     }
 
-    std::pair<long long, long long> Utils::segments_intersection(long long l1, long long r1, long long l2, long long r2) {
+    Utils::LongPair Utils::segments_intersection(ll l1, ll r1, ll l2, ll r2) {
         if (l1 > l2 || l1 == l2 && r1 > r2) {
             std::swap(l1, l2);
             std::swap(r1, r2);
@@ -82,12 +86,12 @@ namespace graph_constraint_solver {
         return std::make_pair(l2, std::min(r1, r2));
     }
 
-    std::pair<long long, long long> Utils::segments_intersection(std::pair<long long, long long> p1, std::pair<long long, long long> p2) {
+    Utils::LongPair Utils::segments_intersection(LongPair p1, LongPair p2) {
         return segments_intersection(p1.first, p1.second, p2.first, p2.second);
     }
 
-    void Utils::assert_segment_inside(long long outer_left, long long outer_right,
-            long long inner_left, long long inner_right, std::string exception_prefix) {
+    void Utils::assert_segment_inside(ll outer_left, ll outer_right, ll inner_left, ll inner_right,
+            std::string exception_prefix) {
 
         if (outer_left > inner_left || inner_left > outer_right ||
             outer_left > inner_right || inner_right > outer_right) {
@@ -99,9 +103,7 @@ namespace graph_constraint_solver {
     }
 
 
-    void Utils::assert_value_inside(long long outer_left, long long outer_right,
-            long long inner_value, std::string exception_prefix) {
-
+    void Utils::assert_value_inside(ll outer_left, ll outer_right, ll inner_value, std::string exception_prefix) {
         if (outer_left > inner_value  || inner_value > outer_right) {
             throw std::invalid_argument(exception_prefix + std::to_string(inner_value)
             + " must lie in"
@@ -109,7 +111,7 @@ namespace graph_constraint_solver {
         }
     }
 
-    std::string Utils::segment_to_string(long long left_bound, long long right_bound) {
+    std::string Utils::segment_to_string(ll left_bound, ll right_bound) {
         return "[" + std::to_string(left_bound) + ", " + std::to_string(right_bound) + "]";
     }
 
