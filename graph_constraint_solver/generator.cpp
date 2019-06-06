@@ -442,7 +442,7 @@ namespace graph_constraint_solver {
 
         DSU branch_dsu(leaves_number, true);
         std::vector<int> confirmed_branches;
-        std::vector<char> branch_head(leaves_number);
+        std::vector<int> branch_head(leaves_number);
         std::iota(branch_head.begin(), branch_head.end(), 0);
 
         int next_free_vertex = leaves_number;
@@ -452,21 +452,26 @@ namespace graph_constraint_solver {
         auto pick_neighbor = [&](int v) {
             auto seg = branch_dsu.get_segment(v);
             if (seg.first != 0) {
-                return seg.first - 1;
+                return branch_dsu.get_parent(seg.first - 1);
             }
             else {
-                return seg.first + 1;
+                return branch_dsu.get_parent(seg.second + 1);
             }
         };
 
         for (int i = 0; i < order - 1; ++i) {
             bool its_merge_time = random.next() < merge_probability;
+            // last iteration must be 'merge'
+            if (merges_cnt == 1 && i != order - 2) {
+                its_merge_time = false;
+            }
             if (its_merge_time && merges_cnt && !confirmed_branches.empty() || !go_up_cnt) {
                 --merges_cnt;
                 auto branch_idx = confirmed_branches.at(random.next(confirmed_branches.size()));
+                branch_idx = branch_dsu.get_parent(branch_idx);
                 auto neighbor = pick_neighbor(branch_idx);
                 graph->add_edge(branch_head[branch_idx], branch_head[neighbor]);
-                branch_dsu.unite(branch_idx, neighbor);
+                branch_dsu.unite(neighbor, branch_idx);
             }
             else {
                 --go_up_cnt;

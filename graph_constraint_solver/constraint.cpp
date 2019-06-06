@@ -158,9 +158,25 @@ namespace graph_constraint_solver {
 
     int ComponentCutPointConstraint::value() {
         // TODO: count min/max component size
+        return 0;
     }
 
     Constraint::SatisfactionVerdict ComponentCutPointConstraint::check() {
+        return Constraint::SatisfactionVerdict::kOK;
+    }
+
+    // ComponentBridgeConstraint
+
+    ConstraintPtr ComponentBridgeConstraint::clone() {
+        return std::make_shared<ComponentBridgeConstraint>(*this);
+    }
+
+    int ComponentBridgeConstraint::value() {
+        // TODO: this
+        return 0;
+    }
+
+    Constraint::SatisfactionVerdict ComponentBridgeConstraint::check() {
         return Constraint::SatisfactionVerdict::kOK;
     }
 

@@ -186,6 +186,15 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
+
+    class ComponentBridgeConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentBridge> {
+    public:
+        using BoundedValueConstraint::BoundedValueConstraint;
+        ConstraintPtr clone() override;
+        int value() override;
+        SatisfactionVerdict check() override;
+    };
+
     class ComponentDiameterConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentDiameter> {
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;

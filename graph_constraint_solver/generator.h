@@ -24,6 +24,7 @@ namespace graph_constraint_solver {
         ConstrainedGraphPtr generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr);
 //        ConstrainedGraphPtr generate_single_component(ConstraintBlockPtr constraint_list_ptr);
 
+        GraphPtr generate_tree_fixed_leaves_number(int order, int leaves_number, double merge_probability);
     private:
         ConstrainedGraphPtr go_with_the_winners(GraphGenerator initial_graph_generator, GoNext go_next, bool to_print = false,
                 int colony_size = 5, int growth_rate = 2, int outer_iterations = 100, int inner_iterations = 10000);
@@ -31,7 +32,6 @@ namespace graph_constraint_solver {
         GraphPtr generate_tree(Graph::Type graph_type, std::pair<int, int> order_bounds, std::pair<int, int> diameter,
                 int max_vertex_degree);
         GraphPtr generate_tree_fixed_diameter(Graph::Type graph_type, int order, int diameter, int max_vertex_degree);
-        GraphPtr generate_tree_fixed_leaves_number(int order, int leaves_number, double merge_probability);
 
         GraphComponentsPtr generate_two_connected_graph(int order, int size, int components_number,
                 std::pair<int, int> components_order_bounds);

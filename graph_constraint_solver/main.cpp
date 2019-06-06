@@ -15,10 +15,11 @@ int main(int argc, char *argv[]) {
     std::pair<int, int> component_number = {1, 1};
     std::pair<int, int> component_order = {5, 20};
     std::pair<int, int> component_size = {10, 50};
-    std::pair<int, int> component_cut_point = {7, 20};
+    std::pair<int, int> component_cut_point = {3, 20};
+    std::pair<int, int> component_bridge = {1, 10};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
-    auto constraints = std::make_shared<graph_constraint_solver::TwoEdgeConnectedBlock>();
+    auto constraints = std::make_shared<graph_constraint_solver::ConnectedBlock>();
 
     constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
@@ -27,16 +28,20 @@ int main(int argc, char *argv[]) {
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentOrderConstraint>(component_order));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentSizeConstraint>(component_size));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentCutPointConstraint>(component_cut_point));
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentBridgeConstraint>(component_bridge));
 
     graph_constraint_solver::ConstrainedGraphPtr constrained_graph;
 
-    auto run_time = graph_constraint_solver::Utils::timeit([&]() {
-        auto generator = graph_constraint_solver::Generator();
-        constrained_graph = generator.generate(constraints);
-    });
+//    auto run_time = graph_constraint_solver::Utils::timeit([&]() {
+//        auto generator = graph_constraint_solver::Generator();
+//        constrained_graph = generator.generate(constraints);
+//    });
 
-    auto graph = constrained_graph->components_ptr()->get_component(0);
-    graph->shuffle();
+//    auto graph = constrained_graph->components_ptr()->get_component(0);
+    auto generator = graph_constraint_solver::Generator();
+    auto graph = generator.generate_tree_fixed_leaves_number(20, 10, 0.9);//graph_constraint_solver::random.next());
+
+//    graph->shuffle();
 
     std::cout << graph->order() << " " << graph->size() << "\n";
     for (int i = 0; i < graph->order(); ++i) {
