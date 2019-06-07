@@ -21,6 +21,10 @@ namespace graph_constraint_solver {
         return order_ == 0;
     }
 
+    int Graph::vertex_degree(int index) {
+        return g_[index].size();
+    }
+
     int Graph::order() {
         return order_;
     }

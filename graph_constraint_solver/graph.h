@@ -30,6 +30,7 @@ namespace graph_constraint_solver {
         int size();
         const std::vector<std::vector<int>>& adjacency_list();
         bool empty();
+        int vertex_degree(int index);
 
         virtual GraphPtr clone() = 0;
         virtual void add_edge(int u, int v) = 0;

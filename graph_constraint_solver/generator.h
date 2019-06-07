@@ -42,9 +42,14 @@ namespace graph_constraint_solver {
                 Utils::IntPair cut_point_bounds, int bridges);
 
         void connect_components_in_vertices(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton);
-        void connect_components_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
+        void connect_components_in_vertices_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
                 std::vector<std::vector<std::pair<int, int>>> &selected_vertices, int &next_free_index,
                 int current_component_index, int previous_component_index, int link_vertex);
+
+        void connect_components_with_edges(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton);
+        void connect_components_with_edges_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
+                std::vector<std::vector<int>> &local_to_global_index,
+                int current_component_index, int previous_component_index);
     };
 }
 

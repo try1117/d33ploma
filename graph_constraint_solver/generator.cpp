@@ -370,6 +370,10 @@ namespace graph_constraint_solver {
 
 //        std::cout << diameter << std::endl;
         GraphPtr g = std::make_shared<UndirectedGraph>(order);
+        if (order == 1) {
+            return g;
+        }
+
         std::vector<int> level(order);
         for (int i = 0; i < diameter; ++i) {
             g->add_edge(i, i + 1);
@@ -832,6 +836,14 @@ namespace graph_constraint_solver {
     GraphPtr Generator::generate_two_edge_connected_component(int order, std::pair<long long, long long> size_bounds, int cut_points) {
         int min_subcomponent_order = 3;
 
+        if (order == 1) {
+            return std::make_shared<UndirectedGraph>(1);
+        }
+
+        if (order < min_subcomponent_order) {
+            throw std::runtime_error("generate_two_edge_connected_component error: order is too small");
+        }
+
         int max_vertex_degree = (order + cut_points) / (cut_points + 1);
         // 1 component with order = (cut_points + 1)
         auto tree_block = std::make_shared<TreeBlock>(Graph::Type::kUndirected, std::make_pair(1, 1),
@@ -1026,10 +1038,96 @@ namespace graph_constraint_solver {
         int inner_vertices = suitable_initial_cut_points.at(random.next(suitable_initial_cut_points.size()));
         int leaves = bridges + 1 - inner_vertices;
         auto tree = generate_tree_fixed_leaves_number(bridges + 1, leaves, random.next());
-        int tmp = 1;
+        int need_cut_point = std::max(0, cut_point_bounds.first - inner_vertices);
+        int can_cut_point = cut_point_bounds.second - inner_vertices;
+
+//        std::vector<int> vertices_idx(tree->order());
+//        std::iota(vertices_idx.begin(), vertices_idx.end(), 0);
+//        std::shuffle(vertices_idx.begin(), vertices_idx.end(), random.rng());
+        std::vector<int> subcomponent_order(tree->order(), 1);
+        std::vector<int> free_order(tree->order(), 0);
+        std::vector<int> subcomponent_bridge_cut_points(tree->order(), 1);
+        std::vector<int> subcomponent_inner_cut_points(tree->order(), 0);
+        std::fill(subcomponent_bridge_cut_points.begin(), subcomponent_bridge_cut_points.begin() + leaves, 0);
+        int order_used = 0;
+        int size_used = 0;
+        double prefer_bridge_cut_points = random.next();
+
+        int additional_cut_point = can_order / 2 + bridges - 1 - need_cut_point;
+        additional_cut_point = random.next(additional_cut_point);
+
+        for (int i = 0; i < need_cut_point + additional_cut_point; ++i) {
+            int index = random.next(tree->order());
+            int to_add = 0;
+            if (subcomponent_order[index] == 1) {
+                to_add = 2;
+                if (tree->vertex_degree(index) >= 3 && i + 1 < need_cut_point && random.next() < prefer_bridge_cut_points) {
+                    subcomponent_bridge_cut_points[index]++;
+                    ++i;
+                }
+                subcomponent_bridge_cut_points[index]++;
+            }
+            else {
+                if (subcomponent_order[index] < tree->vertex_degree(index) && random.next() < prefer_bridge_cut_points) {
+                    to_add = 1;
+                    subcomponent_bridge_cut_points[index]++;
+                }
+                else {
+                    to_add = 2;
+                }
+            }
+            subcomponent_order[index] += to_add;
+            order_used += to_add;
+            size_used += to_add;
+        }
+
+        need_order -= order_used;
+        can_order -= order_used;
+        need_size -= size_used;
+        can_size -= size_used;
+        can_cut_point -= need_cut_point - additional_cut_point;
+        int additional_order = random.next(order_bounds.second - order_bounds.first);
+        order_used = size_used = 0;
+
+        for (int i = 0; i < need_order + additional_order; ++i) {
+            // in case we pick leaf in a tree we'll increase 'cut_points' by 1
+            int left_bound = (can_cut_point ? 0 : leaves);
+            int index = random.next(left_bound, tree->order());
+            int to_add = 1;
+            if (tree->vertex_degree(index) == 1) {
+                can_cut_point--;
+                subcomponent_bridge_cut_points[index]++;
+                to_add = 2;
+            }
+            else {
+                free_order[index]++;
+            }
+            i += to_add - 1;
+            order_used += to_add;
+            size_used += to_add;
+        }
+
+        // time to decide how much edges there will be ...
+        need_size = std::max<long long>(0, need_size - size_used);
+        can_size = std::max<long long>(0, can_size - size_used);
+        GraphComponentsPtr subcomponents_ptr = std::make_shared<GraphComponents>();
+        int order = 0;
+
+        for (int i = 0; i < tree->order(); ++i) {
+            int total_order = subcomponent_order[i] + free_order[i];
+            Utils::LongPair size_bounds = {total_order, total_order + can_size};
+            auto subcomponent = generate_two_edge_connected_component(total_order, size_bounds, subcomponent_inner_cut_points[i]);
+            subcomponents_ptr->add_component(subcomponent);
+            can_size = std::max(0, can_size - subcomponent->size());
+            order += subcomponent->order();
+        }
+
+        GraphPtr graph = std::make_shared<UndirectedGraph>(order);
+        connect_components_with_edges(graph, subcomponents_ptr, tree);
+        return graph;
     }
 
-    void Generator::connect_components_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
+    void Generator::connect_components_in_vertices_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
             std::vector<std::vector<std::pair<int, int>>> &selected_vertices, int &next_free_index,
             int current_component_index, int previous_component_index, int link_vertex) {
 
@@ -1072,7 +1170,7 @@ namespace graph_constraint_solver {
 
         for (int i = 0; i < skeleton_edges.size(); ++i) {
             if (skeleton_edges[i] != previous_component_index) {
-                connect_components_dfs(graph, components, skeleton, selected_vertices, next_free_index,
+                connect_components_in_vertices_dfs(graph, components, skeleton, selected_vertices, next_free_index,
                         skeleton_edges[i], current_component_index,
                         selected_vertices[current_component_index][next_free_selected_vertex++].second);
             }
@@ -1096,6 +1194,55 @@ namespace graph_constraint_solver {
             }
         }
         int next_free_index = 0;
-        connect_components_dfs(graph, components, skeleton, selected_vertices, next_free_index, 0, -1, -1);
+        connect_components_in_vertices_dfs(graph, components, skeleton, selected_vertices, next_free_index, 0, -1, -1);
     }
+
+    void Generator::connect_components_with_edges_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
+            std::vector<std::vector<int>> &local_to_global_index, int current_component_index, int previous_component_index) {
+
+        auto current_component = components->get_component(current_component_index);
+        for (int i = 0; i < current_component->order(); ++i) {
+            for (int j : current_component->adjacency_list().at(i)) {
+                auto ii = local_to_global_index[current_component_index][i];
+                auto jj = local_to_global_index[current_component_index][j];
+                graph->add_edge(ii, jj);
+            }
+        }
+
+        auto skeleton_edges = skeleton->adjacency_list().at(current_component_index);
+        for (auto neighbor_component_index : skeleton_edges) {
+            if (neighbor_component_index != previous_component_index) {
+                int our_vertex_local_index = random.next(components->get_component(current_component_index)->order());
+                int neighbor_vertex_local_index = random.next(components->get_component(neighbor_component_index)->order());
+
+                int our_vertex_global_index = local_to_global_index[current_component_index][our_vertex_local_index];
+                int neighbor_vertex_global_index = local_to_global_index[neighbor_component_index][neighbor_vertex_local_index];
+
+                graph->add_edge(our_vertex_global_index, neighbor_vertex_global_index);
+                connect_components_with_edges_dfs(graph, components, skeleton, local_to_global_index,
+                        neighbor_component_index, current_component_index);
+            }
+        }
+    }
+
+    void Generator::connect_components_with_edges(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton) {
+        std::vector<std::vector<int>> local_to_global_index(components->components().size());
+        for (int i = 0; i < components->components().size(); ++i) {
+            local_to_global_index[i].resize(components->get_component(i)->order());
+        }
+
+        std::vector<int> index_map(graph->order());
+        std::iota(index_map.begin(), index_map.end(), 0);
+        std::shuffle(index_map.begin(), index_map.end(), random.rng());
+        int current_idx = 0;
+
+
+        for (auto &component_indices : local_to_global_index) {
+            for (auto &local_idx : component_indices) {
+                local_idx = index_map[current_idx++];
+            }
+        }
+        connect_components_with_edges_dfs(graph, components, skeleton, local_to_global_index, 0, -1);
+    }
+
 }

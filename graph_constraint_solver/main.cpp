@@ -32,14 +32,14 @@ int main(int argc, char *argv[]) {
 
     graph_constraint_solver::ConstrainedGraphPtr constrained_graph;
 
-//    auto run_time = graph_constraint_solver::Utils::timeit([&]() {
-//        auto generator = graph_constraint_solver::Generator();
-//        constrained_graph = generator.generate(constraints);
-//    });
+    auto run_time = graph_constraint_solver::Utils::timeit([&]() {
+        auto generator = graph_constraint_solver::Generator();
+        constrained_graph = generator.generate(constraints);
+    });
 
-//    auto graph = constrained_graph->components_ptr()->get_component(0);
-    auto generator = graph_constraint_solver::Generator();
-    auto graph = generator.generate_tree_fixed_leaves_number(20, 10, 0.9);//graph_constraint_solver::random.next());
+    auto graph = constrained_graph->components_ptr()->get_component(0);
+//    auto generator = graph_constraint_solver::Generator();
+//    auto graph = generator.generate_tree_fixed_leaves_number(20, 10, 0.4);//graph_constraint_solver::random.next());
 
 //    graph->shuffle();
 
