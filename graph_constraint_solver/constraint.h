@@ -177,7 +177,6 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
-
     class ComponentCutPointConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentCutPoint> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
@@ -185,7 +184,6 @@ namespace graph_constraint_solver {
         int value() override;
         SatisfactionVerdict check() override;
     };
-
 
     class ComponentBridgeConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentBridge> {
     public:
@@ -199,44 +197,7 @@ namespace graph_constraint_solver {
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
         int value() override;
-    };
-
-//    // TODO: real tree constraint (dsu or something)
-//    class TreeConstraint : public Constraint {
-//    public:
-//        explicit TreeConstraint(int weight = 0);
-//        ConstraintPtr clone() override;
-////        void bind_graph(GraphPtr graph_ptr);
-//
-//        void add_edge(int from, int to) override;
-//        std::pair<int, int> recommend_edge() override;
-//
-//        SatisfactionVerdict check() override;
-//
-//    private:
-//        int weight_;
-//        int latest_connected_vertex_;
-//    };
-
-    // TODO: rewrite later
-    class BridgeConstraint : public Constraint {
-    public:
-        BridgeConstraint(int left_bound, int right_bound);
-        ConstraintPtr clone() override;
-        void bind_graph(GraphPtr graph_ptr) override;
-//        void add_edge(int from, int to) override;
-        SatisfactionVerdict check();
-
-        std::pair<int, int> count_bridges(GraphPtr graph_ptr, bool save_bridges = false);
-        std::set<std::pair<int, int>> get_bridges_list();
-
-    private:
-        int left_bound_, right_bound_;
-        std::vector<int> tin, fup;
-        int timer;
-        std::set<std::pair<int, int>> bridges_list_;
-
-        int _count_bridges(GraphPtr graph_ptr, int v, int pr, std::pair<int, int> &res, bool save_bridges = false);
+        SatisfactionVerdict check() override;
     };
 }
 

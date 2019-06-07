@@ -8,5 +8,5 @@ link_directories(${Boost_LIBRARY_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(graph_constraint_solver main.cpp generator.h graph.h constraint.h generator.cpp graph.cpp constrained_graph.h constraint.cpp constrained_graph.cpp utils.h utils.cpp constraint_block.h constraint_block.cpp)
+add_executable(graph_constraint_solver main.cpp generator.h graph.h constraint.h generator.cpp graph.cpp constrained_graph.h constraint.cpp constrained_graph.cpp utils.h utils.cpp constraint_block.h constraint_block.cpp graph_algorithms.h graph_algorithms.cpp)
 target_link_libraries(graph_constraint_solver ${Boost_LIBRARIES})

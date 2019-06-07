@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #include "utils.h"
 #include "generator.h"
+#include "graph_algorithms.h"
 
 // TODO: const GraphPtr ...
 
@@ -43,8 +45,20 @@ int main(int argc, char *argv[]) {
 
 //    graph->shuffle();
 
+    // TODO: graph printer
+
+    std::pair<int, int> bridges_number;
+    std::vector<std::pair<int, int>> bridges_list;
+    graph_constraint_solver::GraphAlgorithms::count_bridges(graph, bridges_number, bridges_list);
+    std::set<std::pair<int, int>> bridges_set(bridges_list.begin(), bridges_list.end());
+
+    std::cout << "Graph order : " << graph->order() << std::endl;
+    std::cout << "Graph size  : " << graph->size() << std::endl;
+    std::cout << "Bridg, nonlv: " << bridges_number.first << ", " << bridges_number.second << std::endl;
+    std::cout << std::endl;
+    std::cout << "Time        : " << run_time << std::endl << std::endl;
+
     std::set<std::pair<int, int>> edges;
-    std::cout << graph->order() << " " << graph->size() << "\n";
     for (int i = 0; i < graph->order(); ++i) {
         for (auto child : graph->adjacency_list()[i]) {
             if (i <= child) {
@@ -52,7 +66,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "parallel" << std::endl;
                 }
                 edges.insert({i, child});
-                printf("g.add_edge(%d, %d, color='%s')\n", i, child, "blue");//(bridges_list.count({i, child}) ? "red" : "blue"));
+                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
 //                std::cout << i + 1 << " " << child + 1 << "\n";
             }
         }
@@ -83,9 +97,6 @@ int main(int argc, char *argv[]) {
 //    auto run_time = graph_constraint_solver::Utils::timeit([&]() {
 //        auto generator = graph_constraint_solver::Generator();
 //        constrained_graph = generator.generate(constraints);
-////        auto br_cons = constraints->get_constraint<graph_constraint_solver::BridgeConstraint>(graph_constraint_solver::Constraint::Type::kBridge);
-////        bridges_cnt = br_cons->count_bridges(g->graph_ptr(), true);
-////        bridges_list = br_cons->get_bridges_list();
 //    });
 //
 //    // TODO: return from Generator::generate GraphPtr of GraphComponentsPtr ???
@@ -102,26 +113,5 @@ int main(int argc, char *argv[]) {
 //        }
 //    }
 //    out.close();
-
-//    std::set<std::pair<int, int>> edges;
 //
-//    int undirected_edges = 0;
-//    for (int i = 0; i < g->graph_ptr()->order(); ++i) {
-//        for (auto child : g->graph_ptr()->adjacency_list()[i]) {
-//            if (i <= child) {
-////                ++undirected_edges;
-//                if (edges.count({i, child})) {
-//                    std::cout << "parallel" << std::endl;
-//                }
-//                edges.insert({i, child});
-//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, "blue");//(bridges_list.count({i, child}) ? "red" : "blue"));
-//            }
-//        }
-//    }
-
-//    std::cout << "Bridg, nonlv: " << bridges_cnt.first << ", " << bridges_cnt.second << std::endl;
-//    std::cout << "Graph order : " << g->graph_ptr()->order() << std::endl;
-//    std::cout << "Graph size  : " << g->graph_ptr()->size() << std::endl;
-//    std::cout << std::endl;
-//    std::cout << "Time        : " << run_time << std::endl;
 }
