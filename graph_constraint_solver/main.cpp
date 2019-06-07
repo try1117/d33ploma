@@ -49,8 +49,12 @@ int main(int argc, char *argv[]) {
 
     std::pair<int, int> bridges_number;
     std::vector<std::pair<int, int>> bridges_list;
-    graph_constraint_solver::GraphAlgorithms::count_bridges(graph, bridges_number, bridges_list);
+    graph_constraint_solver::GraphAlgorithms::find_bridges(graph, bridges_number, bridges_list);
     std::set<std::pair<int, int>> bridges_set(bridges_list.begin(), bridges_list.end());
+
+    int cut_points_number;
+    std::vector<int> cut_points_list;
+    graph_constraint_solver::GraphAlgorithms::find_cut_points(graph, cut_points_number, cut_points_list);
 
     std::cout << "Graph order : " << graph->order() << std::endl;
     std::cout << "Graph size  : " << graph->size() << std::endl;
@@ -70,6 +74,11 @@ int main(int argc, char *argv[]) {
 //                std::cout << i + 1 << " " << child + 1 << "\n";
             }
         }
+    }
+
+    std::cout << std::endl;
+    for (auto v : cut_points_list) {
+        std::cout << v << ", ";
     }
 
     return 0;
