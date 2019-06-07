@@ -107,6 +107,8 @@ namespace graph_constraint_solver {
                 suitable_number_of_bridges.push_back(bridges);
             }
             else {
+                // TODO: check 'second formulae' too
+                // it works for tighter cases, while this formulae does not
                 int to_add = 2 * (need_cut_point - bridges + 1);
                 if (to_add > can_order || to_add > can_size) {
                     continue;
@@ -841,7 +843,8 @@ namespace graph_constraint_solver {
         }
 
         if (order < min_subcomponent_order) {
-            throw std::runtime_error("generate_two_edge_connected_component error: order is too small");
+            throw std::runtime_error("generate_two_edge_connected_component error: cannot generate component with order = "+
+            std::to_string(order));
         }
 
         int max_vertex_degree = (order + cut_points) / (cut_points + 1);
@@ -1037,7 +1040,7 @@ namespace graph_constraint_solver {
 
         int inner_vertices = suitable_initial_cut_points.at(random.next(suitable_initial_cut_points.size()));
         int leaves = bridges + 1 - inner_vertices;
-        auto tree = generate_tree_fixed_leaves_number(bridges + 1, leaves, random.next());
+        auto tree = generate_tree_fixed_leaves_number(bridges + 1, leaves, 0.2);//random.next());
         int need_cut_point = std::max(0, cut_point_bounds.first - inner_vertices);
         int can_cut_point = cut_point_bounds.second - inner_vertices;
 
@@ -1097,11 +1100,12 @@ namespace graph_constraint_solver {
             if (tree->vertex_degree(index) == 1) {
                 can_cut_point--;
                 subcomponent_bridge_cut_points[index]++;
+            }
+            if (subcomponent_order[index] == 1) {
                 to_add = 2;
             }
-            else {
-                free_order[index]++;
-            }
+            free_order[index] += to_add;
+
             i += to_add - 1;
             order_used += to_add;
             size_used += to_add;
@@ -1203,9 +1207,11 @@ namespace graph_constraint_solver {
         auto current_component = components->get_component(current_component_index);
         for (int i = 0; i < current_component->order(); ++i) {
             for (int j : current_component->adjacency_list().at(i)) {
-                auto ii = local_to_global_index[current_component_index][i];
-                auto jj = local_to_global_index[current_component_index][j];
-                graph->add_edge(ii, jj);
+                if (i < j) {
+                    auto ii = local_to_global_index[current_component_index][i];
+                    auto jj = local_to_global_index[current_component_index][j];
+                    graph->add_edge(ii, jj);
+                }
             }
         }
 

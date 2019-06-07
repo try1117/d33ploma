@@ -13,10 +13,10 @@ int main(int argc, char *argv[]) {
 //    std::pair<int, int> order = {100, 100};
 //    std::pair<int, int> size = {100, 100};
     std::pair<int, int> component_number = {1, 1};
-    std::pair<int, int> component_order = {5, 20};
-    std::pair<int, int> component_size = {10, 50};
-    std::pair<int, int> component_cut_point = {3, 20};
-    std::pair<int, int> component_bridge = {1, 10};
+    std::pair<int, int> component_order = {50, 70};
+    std::pair<int, int> component_size = {10, 100};
+    std::pair<int, int> component_cut_point = {5, 20};
+    std::pair<int, int> component_bridge = {0, 10};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
     auto constraints = std::make_shared<graph_constraint_solver::ConnectedBlock>();
@@ -43,10 +43,15 @@ int main(int argc, char *argv[]) {
 
 //    graph->shuffle();
 
+    std::set<std::pair<int, int>> edges;
     std::cout << graph->order() << " " << graph->size() << "\n";
     for (int i = 0; i < graph->order(); ++i) {
         for (auto child : graph->adjacency_list()[i]) {
             if (i <= child) {
+                if (edges.count({i, child})) {
+                    std::cout << "parallel" << std::endl;
+                }
+                edges.insert({i, child});
                 printf("g.add_edge(%d, %d, color='%s')\n", i, child, "blue");//(bridges_list.count({i, child}) ? "red" : "blue"));
 //                std::cout << i + 1 << " " << child + 1 << "\n";
             }
