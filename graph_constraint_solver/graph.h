@@ -15,11 +15,13 @@ namespace graph_constraint_solver {
     // in the future think about using boost::graph or something like that
     class Graph {
     public:
+        static const int kMaximumOrder = static_cast<int>(3e6);
         enum class Type : unsigned char {
             kDirected,
             kUndirected,
         };
 
+        static GraphPtr create(int order, Type type);
         Graph(int order = 0, Type type = Type::kUndirected);
         // TODO: edge type???
 
@@ -34,6 +36,7 @@ namespace graph_constraint_solver {
 
         virtual GraphPtr clone() = 0;
         virtual void add_edge(int u, int v) = 0;
+        void add_edges(const std::vector<std::pair<int, int>> &edges);
         void append_graph(GraphPtr other);
         void shuffle();
 
@@ -49,7 +52,6 @@ namespace graph_constraint_solver {
     class UndirectedGraph : public Graph {
     public:
         UndirectedGraph(int order = 0);
-        UndirectedGraph(int order, const std::vector<std::pair<int, int>> &edges);
         GraphPtr clone() override;
         void add_edge(int u, int v) override;
     };
@@ -57,7 +59,6 @@ namespace graph_constraint_solver {
     class DirectedGraph : public Graph {
     public:
         DirectedGraph(int order = 0);
-        DirectedGraph(int order, const std::vector<std::pair<int, int>> &edges);
         GraphPtr clone() override;
         void add_edge(int u, int v) override;
     };

@@ -15,22 +15,22 @@ int main(int argc, char *argv[]) {
 //    std::pair<int, int> order = {100, 100};
 //    std::pair<int, int> size = {100, 100};
     std::pair<int, int> component_number = {1, 1};
-    std::pair<int, int> component_order = {50, 70};
-    std::pair<int, int> component_size = {10, 100};
-    std::pair<int, int> component_cut_point = {5, 20};
-    std::pair<int, int> component_bridge = {0, 10};
+    std::pair<int, int> component_order = {20, 30};
+    std::pair<int, int> component_size = {10, 30};
+//    std::pair<int, int> component_cut_point = {5, 20};
+//    std::pair<int, int> component_bridge = {0, 10};
 
     graph_constraint_solver::ConstrainedGraphPtr g;
-    auto constraints = std::make_shared<graph_constraint_solver::ConnectedBlock>();
+    auto constraints = std::make_shared<graph_constraint_solver::StronglyConnectedBlock>();
 
-    constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kUndirected));
+    constraints->add_constraint(std::make_shared<graph_constraint_solver::GraphTypeConstraint>(graph_constraint_solver::Graph::Type::kDirected));
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::OrderConstraint>(order));
 //    constraints->add_constraint(std::make_shared<graph_constraint_solver::SizeConstraint>(size));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentNumberConstraint>(component_number));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentOrderConstraint>(component_order));
     constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentSizeConstraint>(component_size));
-    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentCutPointConstraint>(component_cut_point));
-    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentBridgeConstraint>(component_bridge));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentCutPointConstraint>(component_cut_point));
+//    constraints->add_constraint(std::make_shared<graph_constraint_solver::ComponentBridgeConstraint>(component_bridge));
 
     graph_constraint_solver::ConstrainedGraphPtr constrained_graph;
 
@@ -49,12 +49,12 @@ int main(int argc, char *argv[]) {
 
     std::pair<int, int> bridges_number;
     std::vector<std::pair<int, int>> bridges_list;
-    graph_constraint_solver::GraphAlgorithms::find_bridges(graph, bridges_number, bridges_list);
+//    graph_constraint_solver::GraphAlgorithms::find_bridges(graph, bridges_number, bridges_list);
     std::set<std::pair<int, int>> bridges_set(bridges_list.begin(), bridges_list.end());
 
     int cut_points_number;
     std::vector<int> cut_points_list;
-    graph_constraint_solver::GraphAlgorithms::find_cut_points(graph, cut_points_number, cut_points_list);
+//    graph_constraint_solver::GraphAlgorithms::find_cut_points(graph, cut_points_number, cut_points_list);
 
     std::cout << "Graph order : " << graph->order() << std::endl;
     std::cout << "Graph size  : " << graph->size() << std::endl;
@@ -65,14 +65,14 @@ int main(int argc, char *argv[]) {
     std::set<std::pair<int, int>> edges;
     for (int i = 0; i < graph->order(); ++i) {
         for (auto child : graph->adjacency_list()[i]) {
-            if (i <= child) {
+//            if (i <= child) {
                 if (edges.count({i, child})) {
                     std::cout << "parallel" << std::endl;
                 }
                 edges.insert({i, child});
                 printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
 //                std::cout << i + 1 << " " << child + 1 << "\n";
-            }
+//            }
         }
     }
 

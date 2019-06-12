@@ -180,14 +180,14 @@ namespace graph_constraint_solver {
         Constraint::Type::kComponentVertexMaxDegree,
     });
 
-    const std::set<std::pair<Constraint::Type, Constraint::Type>> tree_block_restrictions_({
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> tree_block_restrictions({
 //        {Constraint::Type::kTreeBroadness, Constraint::Type::kDiameter},
     });
 
     const int TreeBlock::kMaximumComponentOrder;
 
     TreeBlock::TreeBlock()
-        : ConstraintBlock(ComponentType::kTree, tree_block_types, tree_block_restrictions_) {
+        : ConstraintBlock(ComponentType::kTree, tree_block_types, tree_block_restrictions) {
 
     }
 
@@ -210,5 +210,23 @@ namespace graph_constraint_solver {
 
     std::pair<int, int> TreeBlock::get_component_diameter_bounds() {
         return get_constraint<ComponentDiameterConstraint>(Type::kComponentDiameter)->bounds();
+    }
+
+    // StronglyConnectedBlock
+
+    const std::set<Constraint::Type> strongly_connected_block_types({
+        Constraint::Type::kGraphType,
+        Constraint::Type::kComponentOrder,
+        Constraint::Type::kComponentSize,
+        Constraint::Type::kComponentNumber,
+    });
+
+    const std::set<std::pair<Constraint::Type, Constraint::Type>> strongly_connected_block_restrictions({
+//        {Constraint::Type::kTreeBroadness, Constraint::Type::kDiameter},
+    });
+
+    StronglyConnectedBlock::StronglyConnectedBlock()
+        : ConstraintBlock(ComponentType::kStronglyConnected, strongly_connected_block_types, strongly_connected_block_restrictions) {
+
     }
 }

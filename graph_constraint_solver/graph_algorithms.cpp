@@ -43,6 +43,10 @@ namespace graph_constraint_solver {
                 bridges_number_(bridges_number), bridges_list_(bridges_list),
                 timer_(0), tin_(graph_ptr->order()), fup_(graph_ptr->order()) {
 
+            if (graph_ptr_->type() != Graph::Type::kUndirected) {
+                throw std::runtime_error("Bridge algorithm error: need undirected graph");
+            }
+
             for (int i = 0; i < graph_ptr->order(); ++i) {
                 if (!tin_[i]) {
                     find_bridges(i, -1);
@@ -79,6 +83,10 @@ namespace graph_constraint_solver {
                 : graph_ptr_(graph_ptr),
                 cut_points_number_(cut_points_number), cut_points_list_(cut_points_list),
                 timer_(0), tin_(graph_ptr->order()), fup_(graph_ptr->order()) {
+
+            if (graph_ptr_->type() != Graph::Type::kUndirected) {
+                throw std::runtime_error("Cut points algorithm error: need undirected graph");
+            }
 
             for (int i = 0; i < graph_ptr->order(); ++i) {
                 if (!tin_[i]) {

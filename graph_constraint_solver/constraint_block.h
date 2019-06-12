@@ -11,6 +11,7 @@ namespace graph_constraint_solver {
             kConnected,
             kTwoConnected,
             kTwoEdgeConnected,
+            kStronglyConnected,
             kTree,
             kRing,
         };
@@ -116,7 +117,10 @@ namespace graph_constraint_solver {
         std::pair<int, int> get_component_diameter_bounds();
     };
 
-
+    class StronglyConnectedBlock : public ConstraintBlock {
+    public:
+        StronglyConnectedBlock();
+    };
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_CONSTRAINT_BLOCK_H

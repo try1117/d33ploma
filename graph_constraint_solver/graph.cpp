@@ -6,6 +6,13 @@ namespace graph_constraint_solver {
 
     // Graph
 
+    GraphPtr Graph::create(int order, Graph::Type type) {
+        if (type == Type::kDirected) {
+            return std::make_shared<DirectedGraph>(order);
+        }
+        return std::make_shared<UndirectedGraph>(order);
+    }
+
     Graph::Graph(int order, Graph::Type type)
         : type_(type), order_(order), size_(0),
         g_(order, std::vector<int>()) {
@@ -37,24 +44,11 @@ namespace graph_constraint_solver {
         return g_;
     }
 
-//    void Graph::add_edge(int u, int v) {
-//        greatest_used_vertex_index_ = std::max(greatest_used_vertex_index_, std::max(u, v));
-//        if (type_ == Type::kDirected) {
-//            add_directed_edge(u, v);
-//        }
-//        if (type_ == Type::kUndirected) {
-//            add_undirected_edge(u, v);
-//        }
-//    }
-
-//    std::pair<int, int> Graph::generate_random_edge() {
-//        if (type_ == Type::kDirected) {
-//            return generate_random_directed_edge();
-//        }
-//        if (type_ == Type::kUndirected) {
-//            return generate_random_undirected_edge();
-//        }
-//    }
+    void Graph::add_edges(const std::vector<std::pair<int, int>> &edges) {
+        for (auto &edge : edges) {
+            add_edge(edge.first, edge.second);
+        }
+    }
 
     void Graph::append_graph(GraphPtr other) {
         // TODO: exception?
@@ -94,13 +88,6 @@ namespace graph_constraint_solver {
 
     }
 
-    UndirectedGraph::UndirectedGraph(int order, const std::vector<std::pair<int, int>> &edges)
-            : Graph(order, Type::kUndirected) {
-        for (auto &edge : edges) {
-            add_edge(edge.first, edge.second);
-        }
-    }
-
     GraphPtr UndirectedGraph::clone() {
         return std::make_shared<UndirectedGraph>(*this);
     }
@@ -116,13 +103,6 @@ namespace graph_constraint_solver {
     DirectedGraph::DirectedGraph(int order)
         : Graph(order, Type::kDirected) {
 
-    }
-
-    DirectedGraph::DirectedGraph(int order, const std::vector<std::pair<int, int>> &edges)
-            : Graph(order, Type::kDirected) {
-        for (auto &edge : edges) {
-            add_edge(edge.first, edge.second);
-        }
     }
 
     GraphPtr DirectedGraph::clone() {
@@ -149,10 +129,6 @@ namespace graph_constraint_solver {
 ////            ++edge_pick_iterations;
 //        }
 //        return {u, v};
-//    }
-//
-//    std::pair<int, int> Graph::generate_random_undirected_edge() {
-//        return generate_random_directed_edge();
 //    }
 
     // GraphComponents
