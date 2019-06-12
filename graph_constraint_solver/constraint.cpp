@@ -20,17 +20,30 @@ namespace graph_constraint_solver {
         {Type::kCutPoint, "CutPoint"},
     });
 
-    Constraint::SatisfactionVerdict Constraint::lies_in_between(int left_bound, int value, int right_bound, bool increasing) {
-        if (value > right_bound) {
-            if (increasing) return Constraint::SatisfactionVerdict::kImpossible;
-            return Constraint::SatisfactionVerdict::kPossible;
-        }
-        if (value < left_bound) {
-            if (increasing) return Constraint::SatisfactionVerdict::kPossible;
-            return Constraint::SatisfactionVerdict::kImpossible;
-        }
-        return Constraint::SatisfactionVerdict::kOK;
-    }
+//    template<typename T>
+//    const Constraint::Type Constraint::TypeToEnumIdMap<T>::type_id = Type::kNone;
+
+    // TODO: register?
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<GraphTypeConstraint>::type_id = Type::kGraphType;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<OrderConstraint>::type_id = Type::kOrder;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<SizeConstraint>::type_id = Type::kSize;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentNumberConstraint>::type_id = Type::kComponentNumber;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentOrderConstraint>::type_id = Type::kComponentOrder;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentSizeConstraint>::type_id = Type::kComponentSize;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentDiameterConstraint>::type_id = Type::kComponentDiameter;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentVertexMaxDegreeConstraint>::type_id = Type::kComponentVertexMaxDegree;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentCutPointConstraint>::type_id = Type::kComponentCutPoint;
+    template<>
+    const Constraint::Type Constraint::TypeToEnumIdMap<ComponentBridgeConstraint>::type_id = Type::kComponentBridge;
 
     Constraint::Constraint(Type type)
         : type_(type), graph_ptr_(nullptr) {
@@ -57,10 +70,10 @@ namespace graph_constraint_solver {
         graph_ptr_ = graph_ptr;
     }
 
-    void Constraint::add_edge(int from, int to) {
-
-    }
-
+//    void Constraint::add_edge(int from, int to) {
+//
+//    }
+//
 //    std::pair<int, int> Constraint::recommend_edge() {
 //        return graph_ptr_->generate_random_edge();
 //    }
@@ -93,7 +106,7 @@ namespace graph_constraint_solver {
         return std::make_shared<OrderConstraint>(*this);
     }
 
-    int OrderConstraint::value() {
+    Graph::OrderType OrderConstraint::value() {
         return graph_ptr_->order();
     }
 
@@ -103,7 +116,7 @@ namespace graph_constraint_solver {
         return std::make_shared<SizeConstraint>(*this);
     }
 
-    int SizeConstraint::value() {
+    Graph::SizeType SizeConstraint::value() {
         return graph_ptr_->size();
     }
 
@@ -113,9 +126,9 @@ namespace graph_constraint_solver {
         return std::make_shared<ComponentNumberConstraint>(*this);
     }
 
-    int ComponentNumberConstraint::value() {
+    Graph::OrderType ComponentNumberConstraint::value() {
         // TODO: count components_number
-        int components_number = 0;
+        Graph::OrderType components_number = 0;
         return components_number;
     }
 
@@ -125,7 +138,7 @@ namespace graph_constraint_solver {
         return std::make_shared<ComponentOrderConstraint>(*this);
     }
 
-    int ComponentOrderConstraint::value() {
+    Graph::OrderType ComponentOrderConstraint::value() {
         // TODO: count min/max component order
         return 0;
     }
@@ -140,7 +153,7 @@ namespace graph_constraint_solver {
         return std::make_shared<ComponentSizeConstraint>(*this);
     }
 
-    int ComponentSizeConstraint::value() {
+    Graph::SizeType ComponentSizeConstraint::value() {
         // TODO: count min/max component size
     }
 
@@ -169,7 +182,7 @@ namespace graph_constraint_solver {
         return std::make_shared<ComponentBridgeConstraint>(*this);
     }
 
-    int ComponentBridgeConstraint::value() {
+    Graph::SizeType ComponentBridgeConstraint::value() {
         // TODO: this
         return 0;
     }
@@ -184,7 +197,7 @@ namespace graph_constraint_solver {
         return std::make_shared<ComponentDiameterConstraint>(*this);
     }
 
-    int ComponentDiameterConstraint::value() {
+    Graph::SizeType ComponentDiameterConstraint::value() {
         // TODO: count diameter
         return 0;
     }

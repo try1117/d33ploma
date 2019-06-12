@@ -16,6 +16,12 @@ namespace graph_constraint_solver {
     class Graph {
     public:
         static const int kMaximumOrder = static_cast<int>(3e6);
+        static const int kMaximumSize = static_cast<int>(3e6);
+
+        using OrderType = int;
+        using SizeType = long long;
+        using EdgeType = std::pair<OrderType, OrderType>;
+
         enum class Type : unsigned char {
             kDirected,
             kUndirected,
@@ -27,40 +33,42 @@ namespace graph_constraint_solver {
 
         Type type();
         // number of vertices
-        int order();
+        OrderType order();
         // number of edges
-        int size();
-        const std::vector<std::vector<int>>& adjacency_list();
+        SizeType size();
+        const std::vector<std::vector<OrderType>>& adjacency_list();
         bool empty();
-        int vertex_degree(int index);
+        OrderType vertex_degree(OrderType index);
 
         virtual GraphPtr clone() = 0;
-        virtual void add_edge(int u, int v) = 0;
-        void add_edges(const std::vector<std::pair<int, int>> &edges);
+        virtual void add_edge(OrderType from, OrderType to) = 0;
+        void add_edge(EdgeType e);
+
+        void add_edges(const std::vector<EdgeType> &edges);
         void append_graph(GraphPtr other);
         void shuffle();
 
     protected:
         Type type_;
-        int order_;
-        int size_;
-        std::vector<std::vector<int>> g_;
+        OrderType order_;
+        SizeType size_;
+        std::vector<std::vector<OrderType>> adjacency_list_;
 //        std::vector<std::vector<bool>> ma_;
 //        std::set<std::pair<int, int>> ma_;
     };
 
     class UndirectedGraph : public Graph {
     public:
-        UndirectedGraph(int order = 0);
+        UndirectedGraph(OrderType order = 0);
         GraphPtr clone() override;
-        void add_edge(int u, int v) override;
+        void add_edge(OrderType from, OrderType to) override;
     };
 
     class DirectedGraph : public Graph {
     public:
-        DirectedGraph(int order = 0);
+        DirectedGraph(OrderType order = 0);
         GraphPtr clone() override;
-        void add_edge(int u, int v) override;
+        void add_edge(OrderType from, OrderType to) override;
     };
 
     class GraphComponents {
@@ -71,7 +79,7 @@ namespace graph_constraint_solver {
         std::shared_ptr<GraphComponents> clone();
         bool empty();
         void add_component(GraphPtr component_ptr);
-        GraphPtr get_component(int index);
+        GraphPtr get_component(Graph::OrderType index);
 
     private:
         std::vector<GraphPtr> components_;

@@ -16,18 +16,37 @@ namespace graph_constraint_solver {
         return std::uniform_real_distribution<double>(0, 1)(rng_);
     }
 
+    size_t Random::next(size_t n) {
+        return std::uniform_int_distribution<size_t>(0, n - 1)(rng_);
+    }
+
     int Random::next(int n) {
-        if (n == 0) {
+        if (n <= 0) {
             return 0;
         }
         return next(0, n - 1);
     }
 
+    long long Random::next(long long n) {
+        if (n <= 0) {
+            return 0;
+        }
+        return next(static_cast<long long>(0), n - 1);
+    }
+
     int Random::next(int l, int r) {
-        return std::uniform_int_distribution<>(l, r)(rng_);
+        return std::uniform_int_distribution<int>(l, r)(rng_);
+    }
+
+    long long Random::next(long long l, long long r) {
+        return std::uniform_int_distribution<long long>(l, r)(rng_);
     }
 
     int Random::next(std::pair<int, int> bounds) {
+        return next(bounds.first, bounds.second);
+    }
+
+    long long Random::next(std::pair<long long, long long> bounds) {
         return next(bounds.first, bounds.second);
     }
 

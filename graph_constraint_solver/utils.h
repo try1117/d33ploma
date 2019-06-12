@@ -14,9 +14,14 @@ namespace graph_constraint_solver {
         Random();
         std::mt19937 rng();
         double next();
+        size_t next(size_t n);
         int next(int n);
         int next(int l, int r);
         int next(std::pair<int, int> bounds);
+
+        long long next(long long n);
+        long long next(long long l, long long r);
+        long long next(std::pair<long long, long long> bounds);
         // function from testlib
         int wnext(int n, int weight);
     private:

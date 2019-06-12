@@ -30,18 +30,19 @@ namespace graph_constraint_solver {
         void add_constraint(ConstraintPtr constraint_ptr);
         void remove_constraint(Type constraint_type);
 
-        template <typename T>
-        std::shared_ptr<T> get_constraint(Type constraint_type) {
-            if (has_constraint(constraint_type)) {
-                return std::static_pointer_cast<T>(constraints_.at(constraint_type));
+        template <typename ConstraintType>
+        std::shared_ptr<ConstraintType> get_constraint() {
+            auto contraint_type_id = Constraint::TypeToEnumIdMap<ConstraintType>()();
+            if (has_constraint(contraint_type_id)) {
+                return std::static_pointer_cast<ConstraintType>(constraints_.at(contraint_type_id));
             }
-            throw std::runtime_error("Call to non-existing " + Constraint::type_to_name_.at(constraint_type) + "-constraint");
+            throw std::runtime_error("Call to non-existing " + Constraint::type_to_name_.at(contraint_type_id) + "-constraint");
         }
 
         void add_goal_constraint(Type constraint_type);
         void remove_goal_constraint(Type constraint_type);
 
-        void add_edge(int, int) override;
+//        void add_edge(int, int) override;
 
         SatisfactionVerdict check() override;
 
@@ -49,13 +50,13 @@ namespace graph_constraint_solver {
         const std::string component_type_name();
         Graph::Type get_graph_type();
 
-        template <Constraint::Type constraint_type>
-        std::pair<int, int> get_constraint_bounds() {
-            if (!constraints_.count(constraint_type)) {
-                throw std::out_of_range("get_constraint_bounds error: unable to access " + Constraint::type_to_name(constraint_type));
-            }
-            return std::static_pointer_cast<BoundedValueConstraint<int, constraint_type>>(constraints_[constraint_type])->bounds();
-        }
+//        template <Constraint::Type constraint_type>
+//        std::pair<int, int> get_constraint_bounds() {
+//            if (!constraints_.count(constraint_type)) {
+//                throw std::out_of_range("get_constraint_bounds error: unable to access " + Constraint::type_to_name(constraint_type));
+//            }
+//            return std::static_pointer_cast<BoundedValueConstraint<int, constraint_type>>(constraints_[constraint_type])->bounds();
+//        }
 
         template <typename T>
         std::shared_ptr<T> clone() {
@@ -109,12 +110,14 @@ namespace graph_constraint_solver {
         static const int kMaximumComponentOrder = static_cast<int>(3e6);
 
         TreeBlock();
-        TreeBlock(Graph::Type graph_type, std::pair<int, int> component_number, std::pair<int, int> component_order_bounds,
-                std::pair<int, int> component_diameter_bounds = std::pair<int, int>(0, kMaximumComponentOrder),
-                        int component_max_vertex_degree = kMaximumComponentOrder);
+        TreeBlock(Graph::Type graph_type,
+                Constraint::OrderBounds component_number,
+                Constraint::OrderBounds component_order_bounds,
+                Constraint::OrderBounds component_diameter_bounds = Constraint::OrderBounds(0, kMaximumComponentOrder),
+                Graph::OrderType component_max_vertex_degree = kMaximumComponentOrder);
 
-        int get_component_maximum_vertex_degree();
-        std::pair<int, int> get_component_diameter_bounds();
+        Graph::OrderType get_component_maximum_vertex_degree();
+        Constraint::OrderBounds get_component_diameter_bounds();
     };
 
     class StronglyConnectedBlock : public ConstraintBlock {

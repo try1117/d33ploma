@@ -78,11 +78,11 @@ namespace graph_constraint_solver {
         }
     }
 
-    void ConstraintBlock::add_edge(int from, int to) {
-        for (auto &c : constraints_) {
-            c.second->add_edge(from, to);
-        }
-    }
+//    void ConstraintBlock::add_edge(int from, int to) {
+//        for (auto &c : constraints_) {
+//            c.second->add_edge(from, to);
+//        }
+//    }
 
     Constraint::SatisfactionVerdict ConstraintBlock::check() {
         auto res = SatisfactionVerdict::kOK;
@@ -107,8 +107,8 @@ namespace graph_constraint_solver {
     Constraint::SatisfactionVerdict ConstraintBlock::check_goals() {
         if (!important_constraints_.empty()) {
             auto res = SatisfactionVerdict::kOK;
-            for (auto imporant : important_constraints_) {
-                res = std::min(res, constraints_[imporant]->check());
+            for (auto important : important_constraints_) {
+                res = std::min(res, constraints_[important]->check());
             }
             return res;
         }
@@ -116,7 +116,7 @@ namespace graph_constraint_solver {
     }
 
     Graph::Type ConstraintBlock::get_graph_type() {
-        return get_constraint<GraphTypeConstraint>(Constraint::Type::kGraphType)->value();
+        return get_constraint<GraphTypeConstraint>()->value();
     }
 
     // ConnectedBlock
@@ -191,9 +191,11 @@ namespace graph_constraint_solver {
 
     }
 
-    TreeBlock::TreeBlock(Graph::Type graph_type, std::pair<int, int> component_number,
-            std::pair<int, int> component_order_bounds, std::pair<int, int> component_diameter_bounds,
-            int component_max_vertex_degree)
+    TreeBlock::TreeBlock(Graph::Type graph_type,
+            Constraint::OrderBounds component_number,
+            Constraint::OrderBounds component_order_bounds,
+            Constraint::OrderBounds component_diameter_bounds,
+            Graph::OrderType component_max_vertex_degree)
         : TreeBlock() {
 
         add_constraint(std::make_shared<GraphTypeConstraint>(graph_type));
@@ -204,12 +206,12 @@ namespace graph_constraint_solver {
     }
 
     // TODO: default values for this functions
-    int TreeBlock::get_component_maximum_vertex_degree() {
-        return get_constraint<ComponentVertexMaxDegreeConstraint>(Type::kComponentVertexMaxDegree)->value();
+    Graph::OrderType TreeBlock::get_component_maximum_vertex_degree() {
+        return get_constraint<ComponentVertexMaxDegreeConstraint>()->value();
     }
 
-    std::pair<int, int> TreeBlock::get_component_diameter_bounds() {
-        return get_constraint<ComponentDiameterConstraint>(Type::kComponentDiameter)->bounds();
+    Constraint::OrderBounds TreeBlock::get_component_diameter_bounds() {
+        return get_constraint<ComponentDiameterConstraint>()->bounds();
     }
 
     // StronglyConnectedBlock

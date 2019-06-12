@@ -6,16 +6,16 @@ namespace graph_constraint_solver {
 
     // Graph
 
-    GraphPtr Graph::create(int order, Graph::Type type) {
+    GraphPtr Graph::create(OrderType order, Graph::Type type) {
         if (type == Type::kDirected) {
             return std::make_shared<DirectedGraph>(order);
         }
         return std::make_shared<UndirectedGraph>(order);
     }
 
-    Graph::Graph(int order, Graph::Type type)
+    Graph::Graph(OrderType order, Graph::Type type)
         : type_(type), order_(order), size_(0),
-        g_(order, std::vector<int>()) {
+          adjacency_list_(order, std::vector<OrderType>()) {
 //        ma_(order, std::vector<bool>(order)) {
 
     }
@@ -28,23 +28,27 @@ namespace graph_constraint_solver {
         return order_ == 0;
     }
 
-    int Graph::vertex_degree(int index) {
-        return g_[index].size();
+    Graph::OrderType Graph::vertex_degree(OrderType index) {
+        return adjacency_list_[index].size();
     }
 
-    int Graph::order() {
+    Graph::OrderType Graph::order() {
         return order_;
     }
 
-    int Graph::size() {
+    Graph::SizeType Graph::size() {
         return size_;
     }
 
-    const std::vector<std::vector<int>>& Graph::adjacency_list() {
-        return g_;
+    const std::vector<std::vector<Graph::OrderType>>& Graph::adjacency_list() {
+        return adjacency_list_;
     }
 
-    void Graph::add_edges(const std::vector<std::pair<int, int>> &edges) {
+    void Graph::add_edge(EdgeType e) {
+        add_edge(e.first, e.second);
+    }
+
+    void Graph::add_edges(const std::vector<EdgeType> &edges) {
         for (auto &edge : edges) {
             add_edge(edge.first, edge.second);
         }
@@ -69,21 +73,21 @@ namespace graph_constraint_solver {
     }
 
     void Graph::shuffle() {
-        std::vector<std::vector<int>> new_g(order_);
-        std::vector<int> index_map(order_);
+        std::vector<std::vector<OrderType>> new_g(order_);
+        std::vector<OrderType> index_map(order_);
         std::iota(index_map.begin(), index_map.end(), 0);
         std::shuffle(index_map.begin(), index_map.end(), random.rng());
-        for (int i = 0; i < order_; ++i) {
-            for (auto j : g_[i]) {
+        for (OrderType i = 0; i < order_; ++i) {
+            for (auto j : adjacency_list_[i]) {
                 new_g[index_map[i]].push_back(index_map[j]);
             }
         }
-        g_ = new_g;
+        adjacency_list_ = new_g;
     }
 
     // UndirectedGraph
 
-    UndirectedGraph::UndirectedGraph(int order)
+    UndirectedGraph::UndirectedGraph(OrderType order)
         : Graph(order, Type::kUndirected) {
 
     }
@@ -92,15 +96,15 @@ namespace graph_constraint_solver {
         return std::make_shared<UndirectedGraph>(*this);
     }
 
-    void UndirectedGraph::add_edge(int u, int v) {
-        g_[u].emplace_back(v);
-        g_[v].emplace_back(u);
+    void UndirectedGraph::add_edge(OrderType from, OrderType to) {
+        adjacency_list_[from].emplace_back(to);
+        adjacency_list_[to].emplace_back(from);
         ++size_;
     }
 
     // DirectedGraph
 
-    DirectedGraph::DirectedGraph(int order)
+    DirectedGraph::DirectedGraph(OrderType order)
         : Graph(order, Type::kDirected) {
 
     }
@@ -109,8 +113,8 @@ namespace graph_constraint_solver {
         return std::make_shared<DirectedGraph>(*this);
     }
 
-    void DirectedGraph::add_edge(int u, int v) {
-        g_[u].emplace_back(v);
+    void DirectedGraph::add_edge(OrderType from, OrderType to) {
+        adjacency_list_[from].emplace_back(to);
         ++size_;
 //        ma_.emplace(u, v);
 //        ma_[u][v] = true;
@@ -163,7 +167,7 @@ namespace graph_constraint_solver {
         components_.push_back(component_ptr);
     }
 
-    GraphPtr GraphComponents::get_component(int index) {
+    GraphPtr GraphComponents::get_component(Graph::OrderType index) {
         if (index < 0 || index + 1 > components_.size()) {
             throw std::runtime_error("GraphComponents error: index out of range");
         }

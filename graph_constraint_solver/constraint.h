@@ -45,6 +45,16 @@ namespace graph_constraint_solver {
 //            kVertexMaxDegree,
         };
 
+        using OrderBounds = std::pair<Graph::OrderType, Graph::OrderType>;
+        using SizeBounds = std::pair<Graph::SizeType, Graph::SizeType>;
+
+        template<typename T> struct TypeToEnumIdMap {
+            static const Type type_id;
+            Type operator()() {
+                return type_id;
+            }
+        };
+
         explicit Constraint(Type type);
         virtual ConstraintPtr clone() = 0;
 
@@ -56,11 +66,22 @@ namespace graph_constraint_solver {
         virtual void bind_graph(GraphPtr graph_ptr);
 
         // TODO: return Edge type instead of std::pair<int, int>
-        virtual void add_edge(int from, int to);
+//        virtual void add_edge(int from, int to);
 //        virtual std::pair<int, int> recommend_edge();
 
         virtual SatisfactionVerdict check() = 0;
-        static SatisfactionVerdict lies_in_between(int left_bound, int value, int right_bound, bool increasing = true);
+        template <typename T>
+        static SatisfactionVerdict lies_in_between(T left_bound, T value, T right_bound, bool increasing = true) {
+            if (value > right_bound) {
+                if (increasing) return Constraint::SatisfactionVerdict::kImpossible;
+                return Constraint::SatisfactionVerdict::kPossible;
+            }
+            if (value < left_bound) {
+                if (increasing) return Constraint::SatisfactionVerdict::kPossible;
+                return Constraint::SatisfactionVerdict::kImpossible;
+            }
+            return Constraint::SatisfactionVerdict::kOK;
+        }
 
     protected:
         GraphPtr graph_ptr_;
@@ -90,7 +111,7 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 
-    class ComponentVertexMaxDegreeConstraint : public SingleValueConstraint<int, Constraint::Type::kComponentVertexMaxDegree> {
+    class ComponentVertexMaxDegreeConstraint : public SingleValueConstraint<Graph::OrderType, Constraint::Type::kComponentVertexMaxDegree> {
     public:
         using SingleValueConstraint::SingleValueConstraint;
         ConstraintPtr clone() override;
@@ -132,7 +153,7 @@ namespace graph_constraint_solver {
         }
 
         SatisfactionVerdict check() override {
-            return lies_in_between(left_bound_, value(), right_bound_);
+            return lies_in_between<T>(left_bound_, value(), right_bound_);
         }
 
     protected:
@@ -140,63 +161,63 @@ namespace graph_constraint_solver {
         T right_bound_;
     };
 
-    class OrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kOrder> {
+    class OrderConstraint : public BoundedValueConstraint<Graph::OrderType, Constraint::Type::kOrder> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::OrderType value() override;
     };
 
-    class SizeConstraint : public BoundedValueConstraint<int, Constraint::Type::kSize> {
+    class SizeConstraint : public BoundedValueConstraint<Graph::SizeType, Constraint::Type::kSize> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::SizeType value() override;
     };
 
-    class ComponentNumberConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentNumber> {
+    class ComponentNumberConstraint : public BoundedValueConstraint<Graph::OrderType, Constraint::Type::kComponentNumber> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::OrderType value() override;
     };
 
-    class ComponentOrderConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentOrder> {
+    class ComponentOrderConstraint : public BoundedValueConstraint<Graph::OrderType, Constraint::Type::kComponentOrder> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::OrderType value() override;
         SatisfactionVerdict check() override;
     };
 
-    class ComponentSizeConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentSize> {
+    class ComponentSizeConstraint : public BoundedValueConstraint<Graph::SizeType, Constraint::Type::kComponentSize> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::SizeType value() override;
         SatisfactionVerdict check() override;
     };
 
-    class ComponentCutPointConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentCutPoint> {
+    class ComponentCutPointConstraint : public BoundedValueConstraint<Graph::OrderType, Constraint::Type::kComponentCutPoint> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::OrderType value() override;
         SatisfactionVerdict check() override;
     };
 
-    class ComponentBridgeConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentBridge> {
+    class ComponentBridgeConstraint : public BoundedValueConstraint<Graph::SizeType, Constraint::Type::kComponentBridge> {
     public:
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::SizeType value() override;
         SatisfactionVerdict check() override;
     };
 
-    class ComponentDiameterConstraint : public BoundedValueConstraint<int, Constraint::Type::kComponentDiameter> {
+    class ComponentDiameterConstraint : public BoundedValueConstraint<Graph::SizeType, Constraint::Type::kComponentDiameter> {
         using BoundedValueConstraint::BoundedValueConstraint;
         ConstraintPtr clone() override;
-        int value() override;
+        Graph::SizeType value() override;
         SatisfactionVerdict check() override;
     };
 }
