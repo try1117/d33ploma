@@ -55,6 +55,9 @@ namespace graph_constraint_solver {
             }
         };
 
+        // TODO: think about this 'long long's, Parser needs this function
+        static ConstraintPtr create_bounded_ptr(Type type, long long left_bound, long long right_bound);
+
         explicit Constraint(Type type);
         virtual ConstraintPtr clone() = 0;
 

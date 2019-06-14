@@ -419,6 +419,10 @@ namespace graph_constraint_solver {
 
         auto connect_to_neighbor = [&](int v) {
             auto seg = dsu.get_segment(v);
+            // the last iteration
+            if (seg.second - seg.first + 1 == order) {
+                return;
+            }
             if (seg.first != 0) {
                 dsu.unite(v, seg.first - 1);
             }

@@ -8,11 +8,22 @@ namespace graph_constraint_solver {
 
     const std::unordered_map<ConstraintBlock::ComponentType, std::string> ConstraintBlock::component_type_to_name_({
         {ComponentType::kConnected, "Connected"},
-        {ComponentType::kTwoConnected, "TwoConnected"},
-        {ComponentType::kTwoEdgeConnected, "TwoEdgeConnected"},
+        {ComponentType::kTwoConnected, "Two-connected"},
+        {ComponentType::kTwoEdgeConnected, "Two-edge-connected"},
         {ComponentType::kTree, "Tree"},
         {ComponentType::kRing, "Ring"},
+        {ComponentType::kStronglyConnected, "Strongly-connected"}
     });
+
+    std::shared_ptr<ConstraintBlock> ConstraintBlock::create(ComponentType component_type) {
+        switch (component_type) {
+            case ComponentType::kConnected: return std::make_shared<ConnectedBlock>();
+            case ComponentType::kTwoConnected: return std::make_shared<TwoConnectedBlock>();
+            case ComponentType::kTwoEdgeConnected: return std::make_shared<TwoEdgeConnectedBlock>();
+            case ComponentType::kTree: return std::make_shared<TreeBlock>();
+            case ComponentType::kStronglyConnected: return std::make_shared<StronglyConnectedBlock>();
+        }
+    }
 
     ConstraintBlock::ConstraintBlock(ComponentType component_type, const std::set<Constraint::Type> &available_constraint_types,
                                      const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs)
@@ -41,6 +52,9 @@ namespace graph_constraint_solver {
     }
 
     void ConstraintBlock::add_constraint(ConstraintPtr constraint_ptr) {
+        if (!constraint_ptr) {
+            throw std::invalid_argument("add_constraint error: invalid pointer");
+        }
         if (!available_constraint_types_.count(constraint_ptr->type())) {
             throw std::invalid_argument(component_type_name() + "-component does not allow " + constraint_ptr->type_name() + "-constraint");
         }
@@ -52,6 +66,12 @@ namespace graph_constraint_solver {
             }
         }
         constraints_[constraint_ptr->type()] = constraint_ptr;
+    }
+
+    void ConstraintBlock::add_constraints(std::vector<ConstraintPtr> &constraints) {
+        for (auto &constraint : constraints) {
+            add_constraint(constraint);
+        }
     }
 
     void ConstraintBlock::remove_constraint(Type constraint_type) {

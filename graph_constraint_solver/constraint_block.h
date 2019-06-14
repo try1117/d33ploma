@@ -16,6 +16,8 @@ namespace graph_constraint_solver {
             kRing,
         };
 
+        static std::shared_ptr<ConstraintBlock> create(ComponentType component_type);
+
         ConstraintBlock(ComponentType component_type, const std::set<Constraint::Type> &available_constraint_types,
                         const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs);
 
@@ -28,6 +30,7 @@ namespace graph_constraint_solver {
         bool has_constraint(Type constraint_type);
 
         void add_constraint(ConstraintPtr constraint_ptr);
+        void add_constraints(std::vector<ConstraintPtr> &constraints);
         void remove_constraint(Type constraint_type);
 
         template <typename ConstraintType>

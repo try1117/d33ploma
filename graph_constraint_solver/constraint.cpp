@@ -11,13 +11,17 @@ namespace graph_constraint_solver {
         {Type::kGraphType, "Graph-type"},
         {Type::kOrder, "Order"},
         {Type::kSize, "Size"},
+        {Type::kCutPoint, "CutPoint"},
+        {Type::kBridge, "Bridge"},
+
         {Type::kComponentNumber, "Number-of-components"},
         {Type::kComponentOrder, "Components-order"},
+        {Type::kComponentCutPoint, "Components-cut-points"},
+        {Type::kComponentBridge, "Components-bridges"},
+
         {Type::kComponentDiameter, "Components-diameter"},
 //        {Type::kTreeBroadness, "Tree-broadness"},
         {Type::kComponentVertexMaxDegree, "Components-vertex-maximum-degree"},
-        {Type::kBridge, "Bridge"},
-        {Type::kCutPoint, "CutPoint"},
     });
 
 //    template<typename T>
@@ -44,6 +48,19 @@ namespace graph_constraint_solver {
     const Constraint::Type Constraint::TypeToEnumIdMap<ComponentCutPointConstraint>::type_id = Type::kComponentCutPoint;
     template<>
     const Constraint::Type Constraint::TypeToEnumIdMap<ComponentBridgeConstraint>::type_id = Type::kComponentBridge;
+
+    ConstraintPtr Constraint::create_bounded_ptr(Type type, long long left_bound, long long right_bound) {
+        switch (type) {;
+            case Type::kOrder: return std::make_shared<OrderConstraint>(left_bound, right_bound);
+            case Type::kSize: return std::make_shared<SizeConstraint>(left_bound, right_bound);
+            case Type::kComponentNumber: return std::make_shared<ComponentNumberConstraint>(left_bound, right_bound);
+            case Type::kComponentOrder: return std::make_shared<ComponentOrderConstraint>(left_bound, right_bound);
+            case Type::kComponentSize: return std::make_shared<ComponentSizeConstraint>(left_bound, right_bound);
+            case Type::kComponentCutPoint: return std::make_shared<ComponentCutPointConstraint>(left_bound, right_bound);
+            case Type::kComponentBridge: return std::make_shared<ComponentBridgeConstraint>(left_bound, right_bound);
+            case Type::kComponentDiameter: return std::make_shared<ComponentDiameterConstraint>(left_bound, right_bound);
+        }
+    }
 
     Constraint::Constraint(Type type)
         : type_(type), graph_ptr_(nullptr) {
