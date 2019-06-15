@@ -11,8 +11,9 @@ namespace graph_constraint_solver {
     // TODO: may be just use testlib.h for random stuff
     class Random {
     public:
-        Random();
-        std::mt19937 rng();
+        std::mt19937_64 rng();
+        void set_seed(long long seed);
+
         double next();
         size_t next(size_t n);
         int next(int n);
@@ -25,7 +26,7 @@ namespace graph_constraint_solver {
         // function from testlib
         int wnext(int n, int weight);
     private:
-        std::mt19937 rng_;
+        std::mt19937_64 rng_;
     };
 
     extern Random random;

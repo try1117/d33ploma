@@ -29,8 +29,9 @@ namespace graph_constraint_solver {
 
     class InputBlock : ProgramBlock {
     public:
-        using Arguments = std::vector<std::string>;
-        InputBlock(Identificator id, Arguments &arguments);
+        using Argument = std::string;
+        using Arguments = std::vector<Argument>;
+        InputBlock(Identificator id, Arguments arguments);
 
     private:
         Arguments arguments_;

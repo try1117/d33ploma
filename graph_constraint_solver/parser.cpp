@@ -39,8 +39,11 @@ namespace graph_constraint_solver {
     const std::unordered_map<Parser::Token, Parser::String> Parser::token_to_name_ = {
             {Token::kBlockType, "type"},
             {Token::kComponentType, "component-type"},
+            {Token::kInputArguments, "arguments"},
     };
 
+    const ProgramBlock::Identificator Parser::input_reserved_id_("input");
+    const ProgramBlock::Identificator Parser::output_reserved_id_("output");
 
     ProgramBlock::Type Parser::name_to_program_block_type(String name) {
         if (!name_to_program_block_type_.count(name)) {
@@ -85,36 +88,26 @@ namespace graph_constraint_solver {
         return component_type;
     }
 
-    void Parser::parse(JSONFile &json_file) {
-        if (!json_file) {
-            throw std::runtime_error("Parser error: bad file");
-        }
+    void Parser::parse(JSONFile &json_file, InputBlock::Arguments arguments) {
         std::string text((std::istreambuf_iterator<char>(json_file)),
                 std::istreambuf_iterator<char>());
 
-        auto input_id = ProgramBlock::Identificator("input");
-        auto output_id = ProgramBlock::Identificator("output");
-
         auto json_object = nlohmann::json::parse(text);
+        parse_input_block(json_object, arguments);
+
         for (auto &element : json_object.items()) {
             auto id = element.key();
             auto value = element.value();
             current_block_id_ = id;
             std::cout << "Parse " + id << std::endl;
 
-            if (id == input_id) {
-                input_block_ = parse_input_block(value);
-            }
-            else if (id == output_id) {
+            if (id == output_reserved_id_) {
                 auto output_block = parse_output_block(value);
             }
             else {
                 // TODO: check that id is unique
                 auto block_type = parse_block_type(value);
-                if (block_type == ProgramBlock::Type::kInput) {
-                    input_block_ = parse_input_block(value);
-                }
-                else if (block_type == ProgramBlock::Type::kOutput) {
+                if (block_type == ProgramBlock::Type::kOutput) {
                     output_block_ = parse_output_block(value);
                 }
                 else if (block_type == ProgramBlock::Type::kCreator) {
@@ -131,11 +124,98 @@ namespace graph_constraint_solver {
         return creator_block_;
     }
 
-    std::shared_ptr<InputBlock> Parser::parse_input_block(nlohmann::json object) {
-        if (input_block_ != nullptr) {
-            throw std::runtime_error("Parser error: more than one input block");
+    std::shared_ptr<InputBlock> Parser::parse_input_block(nlohmann::json &object, InputBlock::Arguments arguments_values) {
+        ProgramBlock::Identificator input_block_id = input_reserved_id_;
+        size_t number_of_input_blocks = 0;
+        if (object.count(input_reserved_id_)) {
+            ++number_of_input_blocks;
         }
-        return nullptr;
+        for (auto &element : object.items()) {
+            auto id = element.key();
+            auto value = element.value();
+            if (value.count(token_to_name_.at(Token::kBlockType))) {
+                auto block_type = parse_block_type(value, false);
+                if (block_type == ProgramBlock::Type::kInput) {
+                    input_block_id = id;
+                    ++number_of_input_blocks;
+                }
+            }
+        }
+        if (number_of_input_blocks > 1) {
+            throw std::runtime_error("Parser error: given more than one input block");
+        }
+
+        if (number_of_input_blocks == 0) {
+            return std::make_shared<InputBlock>(input_block_id, InputBlock::Arguments());
+        }
+
+        auto input_block_object = object.at(input_block_id);
+
+        // when id = "input", check that BlockType is undefined or equal to "input"
+        if (input_block_object.count(token_to_name_.at(Token::kBlockType))) {
+            if (parse_block_type(input_block_object) != ProgramBlock::Type::kInput) {
+                throw std::runtime_error("Parser error: id '" + input_reserved_id_ + "' is reserved for input-block type");
+            }
+        }
+
+        InputBlock::Arguments arguments_names;
+        auto arguments_token_name = token_to_name_.at(Token::kInputArguments);
+        if (input_block_object.count(arguments_token_name)) {
+            nlohmann::json arguments_array = input_block_object.at(arguments_token_name);
+            try {
+                if (!arguments_array.is_array()) {
+                    throw std::exception();
+                }
+                arguments_names = static_cast<InputBlock::Arguments>(arguments_array);
+            }
+            catch (...) {
+                throw std::runtime_error("Parser error: '" + arguments_token_name + "' expected to be an array of strings - example: [\"param1\", \"param2\"]");
+            }
+        }
+
+        if (arguments_names.size() != arguments_values.size()) {
+            throw std::runtime_error("Parser error: expected " + std::to_string(arguments_names.size()) + " arguments but " +
+            std::to_string(arguments_values.size()) + " given");
+        }
+
+        object.erase(input_block_id);
+        std::string dump_string = object.dump();
+
+        for (size_t i = 0; i < arguments_names.size(); ++i) {
+            auto name = "\"%" + arguments_names[i] + "\"";
+            auto value = arguments_values[i];
+
+            // TODO: BOOST can boost::replace_all ...
+            std::vector<size_t> pattern_positions;
+            size_t position = dump_string.find(name, 0);
+            while (position != std::string::npos) {
+                pattern_positions.push_back(position);
+                position = dump_string.find(name, position + 1);
+            }
+
+            auto new_dump_string = std::string(dump_string.size() + pattern_positions.size() * (value.size() - name.size()), 0);
+            size_t dump_string_position = 0;
+            size_t new_dump_string_position = 0;
+
+            for (size_t pattern_index = 0; dump_string_position < dump_string.size(); ) {
+                if (pattern_index < pattern_positions.size() && dump_string_position == pattern_positions[pattern_index]) {
+                    for (size_t j = 0; j < value.size(); ++j) {
+                        new_dump_string[new_dump_string_position + j] = value[j];
+                    }
+                    dump_string_position += name.size();
+                    new_dump_string_position += value.size();
+                    pattern_index++;
+                }
+                else {
+                    new_dump_string[new_dump_string_position++] = dump_string[dump_string_position++];
+                }
+            }
+
+            dump_string = new_dump_string;
+        }
+
+        object = nlohmann::json::parse(dump_string);
+        return std::make_shared<InputBlock>(current_block_id_, arguments_names);
     }
 
     std::shared_ptr<OutputBlock> Parser::parse_output_block(nlohmann::json object) {
@@ -250,7 +330,7 @@ namespace graph_constraint_solver {
                         return Constraint::create_bounded_ptr(constraint_type, left_bound, right_bound);
                     }
                     else {
-                        throw;
+                        throw std::exception();
                     }
                 }
                 catch (...) {

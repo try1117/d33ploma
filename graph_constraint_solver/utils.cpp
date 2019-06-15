@@ -3,13 +3,12 @@
 namespace graph_constraint_solver {
     Random random = Random();
 
-    Random::Random()
-//        : rng_(std::chrono::high_resolution_clock().now().time_since_epoch().count()) {
-        : rng_(1234) {
+    std::mt19937_64 Random::rng() {
+        return rng_;
     }
 
-    std::mt19937 Random::rng() {
-        return rng_;
+    void Random::set_seed(long long seed) {
+        rng_.seed(seed);
     }
 
     double Random::next() {

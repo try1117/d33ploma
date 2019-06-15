@@ -9,7 +9,7 @@
 namespace graph_constraint_solver {
     Program::Program(Parser::JSONFile &json_file, InputBlock::Arguments arguments) {
         Parser parser;
-        parser.parse(json_file);
+        parser.parse(json_file, arguments);
         auto creator_block = parser.get_creator_block();
 
         ConstrainedGraphPtr constrained_graph;

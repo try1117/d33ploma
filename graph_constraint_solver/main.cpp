@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 
 #include "utils.h"
 #include "generator.h"
@@ -11,14 +12,33 @@
 
 int main(int argc, char *argv[]) {
 
-    auto json_file = graph_constraint_solver::Parser::JSONFile("tmp.json");
-    graph_constraint_solver::Program program(json_file, std::vector<std::string>());
+    if (argc < 3) {
+        throw std::runtime_error("graph_constraint_solver error: too few arguments");
+    }
+
+    try {
+        auto random_sid = std::stoll(argv[1]);
+        graph_constraint_solver::random.set_seed(random_sid);
+    }
+    catch (...) {
+        throw std::runtime_error("graph_constraint_solver random seed error: expected 64-bit integer number");
+    }
+
+    graph_constraint_solver::Parser::JSONFile json_file;
+    try {
+        auto file_name = argv[2];
+        json_file.open(file_name);
+    }
+    catch (std::exception &e) {
+        throw std::runtime_error("graph_constraint_solver file error: " + static_cast<std::string>(e.what()));
+    }
+
+    graph_constraint_solver::InputBlock::Arguments arguments(argv + 3, argv + argc);
+
+    // TODO: pass output stream (now just output to stdout)
+    graph_constraint_solver::Program program(json_file, arguments);
     return 0;
 
-//    if (argc != 8 || std::string(argv[1]) != "tree") {
-//        return 0;
-//    }
-//
 //    std::pair<int, int> order = {std::stoi(argv[2]), std::stoi(argv[3])};
 //    std::pair<int, int> diameter = {std::stoi(argv[4]), std::stoi(argv[5])};
 //    int vertex_maximum_degree = std::stoi(argv[6]);

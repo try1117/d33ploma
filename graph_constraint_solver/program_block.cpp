@@ -6,6 +6,11 @@ namespace graph_constraint_solver {
 
     }
 
+    InputBlock::InputBlock(Identificator id, Arguments arguments)
+        : ProgramBlock(Type::kInput, id), arguments_(arguments) {
+
+    }
+
     CreatorBlock::CreatorBlock(Identificator id, ConstraintBlockPtr constraint_block_ptr)
         : ProgramBlock(Type::kCreator, id), constraint_block_ptr_(constraint_block_ptr) {
 

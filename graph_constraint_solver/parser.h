@@ -16,13 +16,15 @@ namespace graph_constraint_solver {
     public:
         using JSONFile = std::ifstream;
         using String = std::string;
-        void parse(JSONFile &json_file);
+        void parse(JSONFile &json_file, InputBlock::Arguments arguments);
         // ZALEPA:
         std::shared_ptr<CreatorBlock> get_creator_block();
 
     private:
         enum class Token;
         static const std::unordered_map<Token, String> token_to_name_;
+        static const ProgramBlock::Identificator input_reserved_id_;
+        static const ProgramBlock::Identificator output_reserved_id_;
 
         static const std::unordered_map<String, ProgramBlock::Type> name_to_program_block_type_;
         ProgramBlock::Type name_to_program_block_type(String name);
@@ -32,7 +34,7 @@ namespace graph_constraint_solver {
         ConstraintBlock::ComponentType name_to_component_type(String name);
         ConstraintBlock::ComponentType parse_component_type(nlohmann::json &object, bool remove_field = true);
 
-        std::shared_ptr<InputBlock> parse_input_block(nlohmann::json object);
+        std::shared_ptr<InputBlock> parse_input_block(nlohmann::json &object, InputBlock::Arguments argument_values);
         std::shared_ptr<OutputBlock> parse_output_block(nlohmann::json object);
         std::shared_ptr<CreatorBlock> parse_creator_block(nlohmann::json object);
 
@@ -45,6 +47,7 @@ namespace graph_constraint_solver {
         enum class Token {
             kBlockType,
             kComponentType,
+            kInputArguments,
         };
     };
 
