@@ -27,7 +27,7 @@ namespace graph_constraint_solver {
         Identificator id_;
     };
 
-    class InputBlock : ProgramBlock {
+    class InputBlock : public ProgramBlock {
     public:
         using Argument = std::string;
         using Arguments = std::vector<Argument>;
@@ -38,7 +38,7 @@ namespace graph_constraint_solver {
         // TODO: map argument to value
     };
 
-    class OutputBlock : ProgramBlock {
+    class OutputBlock : public ProgramBlock {
     public:
         struct Format {
             enum class Structure {
@@ -52,10 +52,13 @@ namespace graph_constraint_solver {
                 kOneBased,
             };
 
+            static const Structure kDefaultStructure = Structure::kAdjList;
+            static const Indexation kDefaultIndexation = Indexation::kOneBased;
+
             Structure structure;
             Indexation indexation;
 
-            Format(Structure structure = Structure::kAdjList, Indexation indexation = Indexation::kOneBased);
+            Format(Structure structure = kDefaultStructure, Indexation indexation = kDefaultIndexation);
         };
 
         OutputBlock(Identificator id, Identificator graph_id, Format format);
@@ -65,7 +68,7 @@ namespace graph_constraint_solver {
         Format format_;
     };
 
-    class CreatorBlock : ProgramBlock {
+    class CreatorBlock : public ProgramBlock {
     public:
         CreatorBlock(Identificator id, ConstraintBlockPtr constraint_block_ptr);
         ConstraintBlockPtr get_constraint_block_ptr();
@@ -74,7 +77,7 @@ namespace graph_constraint_solver {
         ConstraintBlockPtr constraint_block_ptr_;
     };
 
-    class OrientatorBlock : ProgramBlock {
+    class OrientatorBlock : public ProgramBlock {
     public:
         // TODO: think about it
         struct Format {
@@ -88,7 +91,7 @@ namespace graph_constraint_solver {
         Format format_;
     };
 
-    class CombinatorBlock : ProgramBlock {
+    class CombinatorBlock : public ProgramBlock {
     public:
         enum class CombinationType {
             kAppend,

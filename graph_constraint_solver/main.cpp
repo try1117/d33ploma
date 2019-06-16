@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
         throw std::runtime_error("graph_constraint_solver file error: " + static_cast<std::string>(e.what()));
     }
 
+    graph_constraint_solver::impl::increase_stack_size();
+
     graph_constraint_solver::InputBlock::Arguments arguments(argv + 3, argv + argc);
 
     // TODO: pass output stream (now just output to stdout)

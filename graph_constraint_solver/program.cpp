@@ -10,7 +10,7 @@ namespace graph_constraint_solver {
     Program::Program(Parser::JSONFile &json_file, InputBlock::Arguments arguments) {
         Parser parser;
         parser.parse(json_file, arguments);
-        auto creator_block = parser.get_creator_block();
+        auto output_blocks = parser.get_output_blocks();
 
         ConstrainedGraphPtr constrained_graph;
         auto run_time = graph_constraint_solver::Utils::timeit([&]() {
@@ -34,23 +34,23 @@ namespace graph_constraint_solver {
         std::cout << "Cut points  : " << cut_points_list.size() << std::endl;
         std::cout << std::endl;
 
-        std::set<std::pair<int, int>> edges;
-        for (int i = 0; i < graph->order(); ++i) {
-            for (auto child : graph->adjacency_list()[i]) {
+//        std::set<std::pair<int, int>> edges;
+//        for (int i = 0; i < graph->order(); ++i) {
+//            for (auto child : graph->adjacency_list()[i]) {
 //            if (i <= child) {
-                if (edges.count({i, child})) {
-                    std::cout << "parallel" << std::endl;
-                }
-                edges.insert({i, child});
-                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
-//                std::cout << i + 1 << " " << child + 1 << "\n";
+//                if (edges.count({i, child})) {
+//                    std::cout << "parallel" << std::endl;
+//                }
+//                edges.insert({i, child});
+//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
+////                std::cout << i + 1 << " " << child + 1 << "\n";
 //            }
-            }
-        }
-
-        std::cout << std::endl;
-        for (auto v : cut_points_list) {
-            std::cout << v << ", ";
-        }
+//            }
+//        }
+//
+//        std::cout << std::endl;
+//        for (auto v : cut_points_list) {
+//            std::cout << v << ", ";
+//        }
     }
 }

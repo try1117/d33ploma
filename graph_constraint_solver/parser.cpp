@@ -40,14 +40,48 @@ namespace graph_constraint_solver {
             {Token::kBlockType, "type"},
             {Token::kComponentType, "component-type"},
             {Token::kInputArguments, "arguments"},
+            {Token::kOutputFormat, "format"},
+            {Token::kOutputGraphId, "graph-id"},
     };
 
     const ProgramBlock::Identificator Parser::input_reserved_id_("input");
     const ProgramBlock::Identificator Parser::output_reserved_id_("output");
 
+    const std::unordered_map<Parser::String, OutputBlock::Format::Structure> Parser::name_to_output_format_structure_ = {
+            {"adjacency-list", OutputBlock::Format::Structure::kAdjList},
+            {"adj-list", OutputBlock::Format::Structure::kAdjList},
+            {"edge-list", OutputBlock::Format::Structure::kAdjList},
+            {"edges-list", OutputBlock::Format::Structure::kAdjList},
+            {"list", OutputBlock::Format::Structure::kAdjList},
+
+            {"adjacency-matrix", OutputBlock::Format::Structure::kAdjMatrix},
+            {"adj-matrix", OutputBlock::Format::Structure::kAdjMatrix},
+            {"matrix", OutputBlock::Format::Structure::kAdjMatrix},
+
+            {"parent-array", OutputBlock::Format::Structure::kParentArray},
+    };
+
+    const std::unordered_map<Parser::String, OutputBlock::Format::Indexation> Parser::name_to_output_format_indexation_ = {
+            {"zero-based", OutputBlock::Format::Indexation::kZeroBased},
+            {"zero", OutputBlock::Format::Indexation::kZeroBased},
+            {"0-based", OutputBlock::Format::Indexation::kZeroBased},
+            {"0-base", OutputBlock::Format::Indexation::kZeroBased},
+            {"0", OutputBlock::Format::Indexation::kZeroBased},
+
+            {"one-based", OutputBlock::Format::Indexation::kOneBased},
+            {"one", OutputBlock::Format::Indexation::kOneBased},
+            {"1-based", OutputBlock::Format::Indexation::kOneBased},
+            {"1-base", OutputBlock::Format::Indexation::kOneBased},
+            {"1", OutputBlock::Format::Indexation::kOneBased},
+    };
+
+    void Parser::throw_exception(std::string message) {
+        throw std::runtime_error("Parser error in block with id '" + current_block_id_ + "': " + message);
+    }
+
     ProgramBlock::Type Parser::name_to_program_block_type(String name) {
         if (!name_to_program_block_type_.count(name)) {
-            throw std::runtime_error("Parser error: expected type name but got '" + name + "'");
+            throw_exception("expected block-type name but got '" + name + "'");
         }
         return name_to_program_block_type_.at(name);
     }
@@ -57,7 +91,7 @@ namespace graph_constraint_solver {
     ProgramBlock::Type Parser::parse_block_type(nlohmann::json &object, bool remove_field) {
         auto token_name = token_to_name_.at(Token::kBlockType);
         if (!object.count(token_name)) {
-            throw std::runtime_error("Parser error: specify '" + token_name + "' for block '" + current_block_id_ + "'");
+            throw_exception("'" + token_name + "' is not specified");
         }
         auto block_type = name_to_program_block_type(object[token_name]);
         if (remove_field) {
@@ -68,7 +102,7 @@ namespace graph_constraint_solver {
 
     ConstraintBlock::ComponentType Parser::name_to_component_type(String name) {
         if (!name_to_component_type_.count(name)) {
-            throw std::runtime_error("Parser error: expected component-type name but got '" + name + "'");
+            throw_exception("expected component-type name but got '" + name + "'");
         }
         return name_to_component_type_.at(name);
     }
@@ -76,14 +110,11 @@ namespace graph_constraint_solver {
     ConstraintBlock::ComponentType Parser::parse_component_type(nlohmann::json &object, bool remove_field) {
         auto token_name = token_to_name_.at(Token::kComponentType);
         if (!object.count(token_name)) {
-            throw std::runtime_error("Parser error: specify '" + token_name + "' for block '" + current_block_id_ + "'");
+            throw_exception("'" + token_name + "' is not specified");
         }
         auto component_type = name_to_component_type(object[token_name]);
         if (remove_field) {
             object.erase(token_name);
-        }
-        if (object.count(token_name)) {
-            throw std::exception();
         }
         return component_type;
     }
@@ -93,39 +124,42 @@ namespace graph_constraint_solver {
                 std::istreambuf_iterator<char>());
 
         auto json_object = nlohmann::json::parse(text);
-        parse_input_block(json_object, arguments);
+        cut_input_block(json_object, arguments);
 
         for (auto &element : json_object.items()) {
             auto id = element.key();
             auto value = element.value();
             current_block_id_ = id;
-            std::cout << "Parse " + id << std::endl;
+//            std::cerr << "Parse " + id << std::endl;
+            if (id_to_program_block_ptr_.count(id)) {
+                throw_exception("non-unique id");
+            }
 
             if (id == output_reserved_id_) {
-                auto output_block = parse_output_block(value);
+                output_blocks_.push_back(parse_output_block(value));
             }
             else {
                 // TODO: check that id is unique
                 auto block_type = parse_block_type(value);
                 if (block_type == ProgramBlock::Type::kOutput) {
-                    output_block_ = parse_output_block(value);
+                    output_blocks_.push_back(parse_output_block(value));
                 }
                 else if (block_type == ProgramBlock::Type::kCreator) {
-                    creator_block_ = parse_creator_block(value);
+                    id_to_program_block_ptr_[id] = std::static_pointer_cast<ProgramBlock>(parse_creator_block(value));
                 }
                 else {
-                    throw std::runtime_error("Parser error: '" + id + " has unsupported block type" );
+                    throw_exception("unsupported block-type");
                 }
             }
         }
     }
 
-    std::shared_ptr<CreatorBlock> Parser::get_creator_block() {
-        return creator_block_;
+    std::vector<std::shared_ptr<OutputBlock>> Parser::get_output_blocks() {
+        return output_blocks_;
     }
 
-    std::shared_ptr<InputBlock> Parser::parse_input_block(nlohmann::json &object, InputBlock::Arguments arguments_values) {
-        ProgramBlock::Identificator input_block_id = input_reserved_id_;
+    void Parser::cut_input_block(nlohmann::json &object, InputBlock::Arguments arguments_values) {
+        auto input_block_id = input_reserved_id_;
         size_t number_of_input_blocks = 0;
         if (object.count(input_reserved_id_)) {
             ++number_of_input_blocks;
@@ -134,19 +168,22 @@ namespace graph_constraint_solver {
             auto id = element.key();
             auto value = element.value();
             if (value.count(token_to_name_.at(Token::kBlockType))) {
-                auto block_type = parse_block_type(value, false);
+                auto block_type = parse_block_type(value);
                 if (block_type == ProgramBlock::Type::kInput) {
                     input_block_id = id;
                     ++number_of_input_blocks;
                 }
+                else if (id == input_reserved_id_) {
+                    throw_exception("id '" + input_reserved_id_ + "' is reserved for input-block");
+                }
             }
         }
         if (number_of_input_blocks > 1) {
-            throw std::runtime_error("Parser error: given more than one input block");
+            throw_exception("given more than one input-block");
         }
 
         if (number_of_input_blocks == 0) {
-            return std::make_shared<InputBlock>(input_block_id, InputBlock::Arguments());
+            return;
         }
 
         auto input_block_object = object.at(input_block_id);
@@ -154,7 +191,7 @@ namespace graph_constraint_solver {
         // when id = "input", check that BlockType is undefined or equal to "input"
         if (input_block_object.count(token_to_name_.at(Token::kBlockType))) {
             if (parse_block_type(input_block_object) != ProgramBlock::Type::kInput) {
-                throw std::runtime_error("Parser error: id '" + input_reserved_id_ + "' is reserved for input-block type");
+                throw_exception("id '" + input_reserved_id_ + "' is reserved for input-block type");
             }
         }
 
@@ -169,12 +206,12 @@ namespace graph_constraint_solver {
                 arguments_names = static_cast<InputBlock::Arguments>(arguments_array);
             }
             catch (...) {
-                throw std::runtime_error("Parser error: '" + arguments_token_name + "' expected to be an array of strings - example: [\"param1\", \"param2\"]");
+                throw_exception("'" + arguments_token_name + "' expected to be an array of strings - example: [\"param1\", \"param2\"]");
             }
         }
 
         if (arguments_names.size() != arguments_values.size()) {
-            throw std::runtime_error("Parser error: expected " + std::to_string(arguments_names.size()) + " arguments but " +
+            throw_exception("expected " + std::to_string(arguments_names.size()) + " arguments but " +
             std::to_string(arguments_values.size()) + " given");
         }
 
@@ -186,6 +223,8 @@ namespace graph_constraint_solver {
             auto value = arguments_values[i];
 
             // TODO: BOOST can boost::replace_all ...
+            // well this code is definitely an overkill, could just do 'while(find) replace'
+            // parser isn't a bottleneck of this program ...
             std::vector<size_t> pattern_positions;
             size_t position = dump_string.find(name, 0);
             while (position != std::string::npos) {
@@ -214,12 +253,82 @@ namespace graph_constraint_solver {
             dump_string = new_dump_string;
         }
 
-        object = nlohmann::json::parse(dump_string);
-        return std::make_shared<InputBlock>(current_block_id_, arguments_names);
+        try {
+            object = nlohmann::json::parse(dump_string);
+        }
+        catch (...) {
+            throw_exception("bad arguments substitution");
+        }
+    }
+
+    OutputBlock::Format Parser::parse_output_format(nlohmann::json object) {
+        auto format_token_name = token_to_name_.at(Token::kOutputFormat);
+        if (!object.count(format_token_name)) {
+            throw_exception("expected '" + format_token_name + "' field");
+        }
+
+        nlohmann::json format_json_array = object.at(format_token_name);
+        std::vector<Parser::String> format_array;
+
+        try {
+            if (!format_json_array.is_array()) {
+                throw std::exception();
+            }
+            format_array = static_cast<std::vector<Parser::String>>(format_json_array);
+        }
+        catch (...) {
+            throw_exception("'" + format_token_name + "' expected array of strings");
+        }
+
+        size_t structure_options_cnt = 0;
+        size_t indexation_options_cnt = 0;
+
+        auto structure = OutputBlock::Format::kDefaultStructure;
+        auto indexation = OutputBlock::Format::kDefaultIndexation;
+
+        for (auto &option : format_array) {
+            if (name_to_output_format_structure_.count(option)) {
+                ++structure_options_cnt;
+                structure = name_to_output_format_structure_.at(option);
+            }
+            else if (name_to_output_format_indexation_.count(option)) {
+                ++indexation_options_cnt;
+                indexation = name_to_output_format_indexation_.at(option);
+            }
+            else {
+                throw_exception("undefined output-format '" + option + "'");
+            }
+        }
+        return OutputBlock::Format(structure, indexation);
+    }
+
+    ProgramBlock::Identificator Parser::parse_output_graph_id(nlohmann::json object) {
+        auto token_name = token_to_name_.at(Token::kOutputGraphId);
+        if (!object.count(token_name)) {
+            throw_exception("expected '" + token_name + "' field");
+        }
+        nlohmann::json json_id = object.at(token_name);
+        if (!json_id.is_string()) {
+            throw_exception("'" + token_name + "' field expected a string identificator");
+        }
+        auto id = ProgramBlock::Identificator(json_id);
+        if (!id_to_program_block_ptr_.count(id)) {
+            throw_exception("unknown " + token_name + " '" + id + "'");
+        }
+        return id;
     }
 
     std::shared_ptr<OutputBlock> Parser::parse_output_block(nlohmann::json object) {
-        return nullptr;
+        if (object.count(token_to_name_.at(Token::kBlockType))) {
+            auto block_type = parse_block_type(object);
+            if (block_type != ProgramBlock::Type::kOutput) {
+                throw_exception("id '" + output_reserved_id_ + "' is reserved for output-type block");
+            }
+        }
+
+        auto graph_id = parse_output_graph_id(object);
+        auto format = parse_output_format(object);
+        return std::make_shared<OutputBlock>(current_block_id_, graph_id, format);
     }
 
     std::shared_ptr<CreatorBlock> Parser::parse_creator_block(nlohmann::json object) {

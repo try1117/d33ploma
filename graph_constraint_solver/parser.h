@@ -17,10 +17,13 @@ namespace graph_constraint_solver {
         using JSONFile = std::ifstream;
         using String = std::string;
         void parse(JSONFile &json_file, InputBlock::Arguments arguments);
-        // ZALEPA:
-        std::shared_ptr<CreatorBlock> get_creator_block();
+
+        std::vector<std::shared_ptr<OutputBlock>> get_output_blocks();
 
     private:
+        void throw_exception(std::string message);
+        std::unordered_map<ProgramBlock::Identificator, std::shared_ptr<ProgramBlock>> id_to_program_block_ptr_;
+
         enum class Token;
         static const std::unordered_map<Token, String> token_to_name_;
         static const ProgramBlock::Identificator input_reserved_id_;
@@ -34,20 +37,28 @@ namespace graph_constraint_solver {
         ConstraintBlock::ComponentType name_to_component_type(String name);
         ConstraintBlock::ComponentType parse_component_type(nlohmann::json &object, bool remove_field = true);
 
-        std::shared_ptr<InputBlock> parse_input_block(nlohmann::json &object, InputBlock::Arguments argument_values);
+        void cut_input_block(nlohmann::json &object, InputBlock::Arguments argument_values);
+
+        static const std::unordered_map<String, OutputBlock::Format::Structure> name_to_output_format_structure_;
+        static const std::unordered_map<String, OutputBlock::Format::Indexation> name_to_output_format_indexation_;
+        OutputBlock::Format parse_output_format(nlohmann::json object);
+        ProgramBlock::Identificator parse_output_graph_id(nlohmann::json object);
         std::shared_ptr<OutputBlock> parse_output_block(nlohmann::json object);
+
         std::shared_ptr<CreatorBlock> parse_creator_block(nlohmann::json object);
 
+        ProgramBlock::Identificator current_block_id_;
         std::shared_ptr<InputBlock> input_block_;
         // ZALEPA:
         std::shared_ptr<CreatorBlock> creator_block_;
-        std::shared_ptr<OutputBlock> output_block_;
-        ProgramBlock::Identificator current_block_id_;
+        std::vector<std::shared_ptr<OutputBlock>> output_blocks_;
 
         enum class Token {
             kBlockType,
             kComponentType,
             kInputArguments,
+            kOutputFormat,
+            kOutputGraphId,
         };
     };
 
