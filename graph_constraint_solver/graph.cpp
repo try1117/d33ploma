@@ -54,22 +54,17 @@ namespace graph_constraint_solver {
         }
     }
 
-    void Graph::append_graph(GraphPtr other) {
-        // TODO: exception?
-//        if (greatest_used_vertex_index_ + other->order() == order_) {
-//            throw std::exception();
-//        }
-//        int base = greatest_used_vertex_index_ + 1;
-//        greatest_used_vertex_index_ += other->order();
-//
-//        auto adj_list = other->adjacency_list();
-//        for (int i = 0; i < other->order(); ++i) {
-//            g_[base + i] = adj_list[i];
-//            for (auto edge : adj_list[i]) {
-//                ma_.emplace(base + i, base + edge);
-////                ma_[base + i][base + edge] = true;
-//            }
-//        }
+    void Graph::append_graph(GraphPtr other, size_t shift) {
+        if (shift + other->order() > order_) {
+            throw std::runtime_error("append_graph error: can't append graph(not enough space)");
+        }
+        auto adj_list = other->adjacency_list();
+        for (int i = 0; i < other->order(); ++i) {
+            for (auto edge : adj_list[i]) {
+                adjacency_list_[shift + i].emplace_back(shift + edge);
+            }
+        }
+        size_ += other->size();
     }
 
     void Graph::shuffle() {
@@ -135,42 +130,4 @@ namespace graph_constraint_solver {
 //        return {u, v};
 //    }
 
-    // GraphComponents
-
-    GraphComponents::GraphComponents()
-        : components_(std::vector<GraphPtr>()) {
-
-    }
-
-    GraphComponents::GraphComponents(std::vector<GraphPtr> &components)
-        : components_(components) {
-
-    }
-
-    std::vector<GraphPtr>& GraphComponents::components() {
-        return components_;
-    }
-
-    std::shared_ptr<GraphComponents> GraphComponents::clone() {
-        std::vector<GraphPtr> components;
-        for (auto &component : components_) {
-            components.push_back(component->clone());
-        }
-        return std::make_shared<GraphComponents>(components);
-    }
-
-    bool GraphComponents::empty() {
-        return components_.empty();
-    }
-
-    void GraphComponents::add_component(GraphPtr component_ptr) {
-        components_.push_back(component_ptr);
-    }
-
-    GraphPtr GraphComponents::get_component(Graph::OrderType index) {
-        if (index < 0 || index + 1 > components_.size()) {
-            throw std::runtime_error("GraphComponents error: index out of range");
-        }
-        return components_.at(index);
-    }
 }

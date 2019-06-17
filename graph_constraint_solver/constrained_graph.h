@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "graph.h"
+#include "graph_components.h"
 #include "constraint.h"
 #include "constraint_block.h"
 

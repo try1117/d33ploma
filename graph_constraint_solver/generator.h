@@ -10,16 +10,16 @@ namespace graph_constraint_solver {
 
     class Generator {
     public:
-        ConstrainedGraphPtr generate(ConstraintBlockPtr constraint_list_ptr);
-        ConstrainedGraphPtr generate_block(ConstraintBlockPtr constraint_block_ptr);
+        GraphComponentsPtr generate(ConstraintBlockPtr constraint_list_ptr);
+        GraphComponentsPtr generate_block(ConstraintBlockPtr constraint_block_ptr);
 
-        ConstrainedGraphPtr generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr);
-        ConstrainedGraphPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
+        GraphComponentsPtr generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
                 bool check_satisfiability_only = false);
-        ConstrainedGraphPtr generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr);
-        ConstrainedGraphPtr generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr);
 
-        ConstrainedGraphPtr generate_strongly_connected_block(std::shared_ptr<StronglyConnectedBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_strongly_connected_block(std::shared_ptr<StronglyConnectedBlock> constraint_block_ptr);
 
     private:
         // TODO: remove this 'go_with_the_winners' thing???

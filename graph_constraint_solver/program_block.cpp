@@ -1,5 +1,7 @@
 #include "program_block.h"
 
+#include "generator.h"
+
 namespace graph_constraint_solver {
     ProgramBlock::ProgramBlock(Type type, Identificator id)
         : type_(type), id_(id) {
@@ -11,14 +13,23 @@ namespace graph_constraint_solver {
 
     }
 
-    OutputBlock::Format::Format(Structure structure, Indexation indexation)
-        : structure(structure), indexation(indexation) {
-
+    GraphComponentsPtr InputBlock::generate_graph() {
+        return nullptr;
     }
 
+    GraphComponentsPtr OutputBlock::generate_graph() {
+        return graph_program_block_ptr_->generate_graph();
+    }
 
-    OutputBlock::OutputBlock(Identificator id, Identificator graph_id, Format format)
-        : ProgramBlock(Type::kOutput, id), graph_id_(graph_id), format_(format) {
+    void OutputBlock::print_graph(bool debug) {
+        auto graph = generate_graph();
+        graph->print(format_, debug);
+    }
+
+    OutputBlock::OutputBlock(Identificator id, Identificator graph_id, GraphPrinter::OutputFormat format,
+            ProgramBlockPtr graph_program_block_ptr)
+        : ProgramBlock(Type::kOutput, id), graph_id_(graph_id), format_(format),
+        graph_program_block_ptr_(graph_program_block_ptr)  {
 
     }
 
@@ -31,4 +42,11 @@ namespace graph_constraint_solver {
     ConstraintBlockPtr CreatorBlock::get_constraint_block_ptr() {
         return constraint_block_ptr_;
     }
+
+    GraphComponentsPtr CreatorBlock::generate_graph() {
+        Generator generator;
+        auto graph = generator.generate(constraint_block_ptr_);
+        return graph;
+    }
+
 }

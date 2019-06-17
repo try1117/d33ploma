@@ -45,7 +45,7 @@ namespace graph_constraint_solver {
         void add_edge(EdgeType e);
 
         void add_edges(const std::vector<EdgeType> &edges);
-        void append_graph(GraphPtr other);
+        void append_graph(GraphPtr other, size_t shift);
         void shuffle();
 
     protected:
@@ -70,22 +70,6 @@ namespace graph_constraint_solver {
         GraphPtr clone() override;
         void add_edge(OrderType from, OrderType to) override;
     };
-
-    class GraphComponents {
-    public:
-        GraphComponents();
-        GraphComponents(std::vector<GraphPtr> &components);
-        std::vector<GraphPtr>& components();
-        std::shared_ptr<GraphComponents> clone();
-        bool empty();
-        void add_component(GraphPtr component_ptr);
-        GraphPtr get_component(Graph::OrderType index);
-
-    private:
-        std::vector<GraphPtr> components_;
-    };
-
-    using GraphComponentsPtr = std::shared_ptr<GraphComponents>;
 }
 
 #endif //GRAPH_CONSTRAINT_SOLVER_GRAPH_H

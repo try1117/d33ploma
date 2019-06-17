@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "constraint_block.h"
+#include "graph_components.h"
 
 namespace graph_constraint_solver {
 
@@ -22,16 +23,21 @@ namespace graph_constraint_solver {
 
         ProgramBlock(Type type, Identificator id);
 
+        virtual GraphComponentsPtr generate_graph() = 0;
+
     protected:
         Type type_;
         Identificator id_;
     };
+
+    using ProgramBlockPtr = std::shared_ptr<ProgramBlock>;
 
     class InputBlock : public ProgramBlock {
     public:
         using Argument = std::string;
         using Arguments = std::vector<Argument>;
         InputBlock(Identificator id, Arguments arguments);
+        GraphComponentsPtr generate_graph();
 
     private:
         Arguments arguments_;
@@ -40,38 +46,21 @@ namespace graph_constraint_solver {
 
     class OutputBlock : public ProgramBlock {
     public:
-        struct Format {
-            enum class Structure {
-                kAdjList,
-                kAdjMatrix,
-                kParentArray,
-            };
-
-            enum class Indexation {
-                kZeroBased,
-                kOneBased,
-            };
-
-            static const Structure kDefaultStructure = Structure::kAdjList;
-            static const Indexation kDefaultIndexation = Indexation::kOneBased;
-
-            Structure structure;
-            Indexation indexation;
-
-            Format(Structure structure = kDefaultStructure, Indexation indexation = kDefaultIndexation);
-        };
-
-        OutputBlock(Identificator id, Identificator graph_id, Format format);
+        OutputBlock(Identificator id, Identificator graph_id, GraphPrinter::OutputFormat format, ProgramBlockPtr graph_program_block_ptr);
+        GraphComponentsPtr generate_graph() override;
+        void print_graph(bool debug = false);
 
     private:
         Identificator graph_id_;
-        Format format_;
+        ProgramBlockPtr graph_program_block_ptr_;
+        GraphPrinter::OutputFormat format_;
     };
 
     class CreatorBlock : public ProgramBlock {
     public:
         CreatorBlock(Identificator id, ConstraintBlockPtr constraint_block_ptr);
         ConstraintBlockPtr get_constraint_block_ptr();
+        GraphComponentsPtr generate_graph() override;
 
     private:
         ConstraintBlockPtr constraint_block_ptr_;

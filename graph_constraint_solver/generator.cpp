@@ -10,7 +10,7 @@
 
 namespace graph_constraint_solver {
 
-    ConstrainedGraphPtr Generator::generate(ConstraintBlockPtr constraint_list_ptr) {
+    GraphComponentsPtr Generator::generate(ConstraintBlockPtr constraint_list_ptr) {
         return generate_block(constraint_list_ptr);
     }
 
@@ -25,7 +25,7 @@ namespace graph_constraint_solver {
 //        return result;
 //    }
 
-    ConstrainedGraphPtr Generator::generate_block(ConstraintBlockPtr constraint_block_ptr) {
+    GraphComponentsPtr Generator::generate_block(ConstraintBlockPtr constraint_block_ptr) {
         if (constraint_block_ptr->component_type() == ConstraintBlock::ComponentType::kTwoConnected) {
             return generate_two_connected_block(std::static_pointer_cast<TwoConnectedBlock>(constraint_block_ptr));
         }
@@ -43,7 +43,7 @@ namespace graph_constraint_solver {
         }
     }
 
-    ConstrainedGraphPtr Generator::generate_strongly_connected_block(std::shared_ptr<StronglyConnectedBlock> constraint_block_ptr) {
+    GraphComponentsPtr Generator::generate_strongly_connected_block(std::shared_ptr<StronglyConnectedBlock> constraint_block_ptr) {
         auto graph_type = constraint_block_ptr->get_graph_type();
         auto component_number_bounds = constraint_block_ptr->template get_constraint<ComponentNumberConstraint>()->bounds();
         auto component_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>()->bounds();
@@ -55,10 +55,10 @@ namespace graph_constraint_solver {
             auto component = generate_strongly_connected_component(component_order_bounds, component_size_bounds);
             components->add_component(component);
         }
-        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+        return components;
     }
 
-    ConstrainedGraphPtr Generator::generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr) {
+    GraphComponentsPtr Generator::generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr) {
         auto graph_type = constraint_block_ptr->get_graph_type();
         auto component_number_bounds = constraint_block_ptr->template get_constraint<ComponentNumberConstraint>()->bounds();
         auto component_order_bounds = constraint_block_ptr->template get_constraint<ComponentOrderConstraint>()->bounds();
@@ -153,7 +153,7 @@ namespace graph_constraint_solver {
                 component_number_constraint->set_bounds(1, 1);
 
                 auto block = generate_two_edge_connected_block(two_edge_connected_block_ptr);
-                return block->components_ptr()->get_component(0);
+                return block->get_component(0);
             }
             if (bridges == 1) {
                 // TODO: directed/undirected
@@ -171,10 +171,10 @@ namespace graph_constraint_solver {
             auto bridges = suitable_number_of_bridges.at(random.next(suitable_number_of_bridges.size()));
             components->add_component(generate_component(bridges));
         }
-        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+        return components;
     }
 
-    ConstrainedGraphPtr Generator::generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr) {
+    GraphComponentsPtr Generator::generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr) {
         // TODO: default values
         auto graph_type = constraint_block_ptr->get_graph_type();
         auto order_bounds = constraint_block_ptr->template get_constraint<OrderConstraint>()->bounds();
@@ -189,10 +189,10 @@ namespace graph_constraint_solver {
             auto size = random.next(size_bounds);
             auto graph = generate_two_connected_graph(graph_type, order, size, components_number, components_order_bounds);
             if (!graph->empty()) {
-                return std::make_shared<ConstrainedGraph>(constraint_block_ptr, graph);
+                return graph;
             }
         }
-        return std::make_shared<ConstrainedGraph>();
+        throw std::runtime_error("generator_error: please rewrite generate_two_connected_block");
     }
 
     // TODO: remove this?
@@ -531,7 +531,7 @@ namespace graph_constraint_solver {
         return graph;
     }
 
-    ConstrainedGraphPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr) {
+    GraphComponentsPtr Generator::generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr) {
         auto graph_type = constraint_block_ptr->get_graph_type();
 //        auto order_bounds = block_ptr->get_order_bounds();
         auto component_number_bounds = constraint_block_ptr->template get_constraint<ComponentNumberConstraint>()->bounds();
@@ -557,7 +557,7 @@ namespace graph_constraint_solver {
                     component_max_vertex_degree));
         }
 
-        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+        return components;
     }
 
     // TODO: create class TwoConnectedGenerator ???
@@ -753,7 +753,7 @@ namespace graph_constraint_solver {
         return graph;
     }
 
-    ConstrainedGraphPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
+    GraphComponentsPtr Generator::generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
             bool check_satisfiability_only) {
 
         auto graph_type = constraint_block_ptr->get_graph_type();
@@ -839,7 +839,7 @@ namespace graph_constraint_solver {
             auto component = generate_two_edge_connected_component(graph_type, order, size_bounds, cut_points);
             components->add_component(component);
         }
-        return std::make_shared<ConstrainedGraph>(constraint_block_ptr, components);
+        return components;
     }
 
     // TODO: by the way this function looks very like 'generate_two_connected_block'
@@ -868,7 +868,7 @@ namespace graph_constraint_solver {
                 Constraint::OrderBounds(0, cut_points),
                 max_vertex_degree);
 
-        auto tree_graph = generate_tree_block(tree_block)->components_ptr()->get_component(0);
+        auto tree_graph = generate_tree_block(tree_block)->get_component(0);
 
         std::vector<Graph::OrderType> subcomponents_order(cut_points + 1);
         Constraint::SizeBounds current_size_bounds;

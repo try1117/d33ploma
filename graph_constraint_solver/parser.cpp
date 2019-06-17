@@ -47,32 +47,32 @@ namespace graph_constraint_solver {
     const ProgramBlock::Identificator Parser::input_reserved_id_("input");
     const ProgramBlock::Identificator Parser::output_reserved_id_("output");
 
-    const std::unordered_map<Parser::String, OutputBlock::Format::Structure> Parser::name_to_output_format_structure_ = {
-            {"adjacency-list", OutputBlock::Format::Structure::kAdjList},
-            {"adj-list", OutputBlock::Format::Structure::kAdjList},
-            {"edge-list", OutputBlock::Format::Structure::kAdjList},
-            {"edges-list", OutputBlock::Format::Structure::kAdjList},
-            {"list", OutputBlock::Format::Structure::kAdjList},
+    const std::unordered_map<Parser::String, GraphPrinter::OutputFormat::Structure> Parser::name_to_output_format_structure_ = {
+            {"adjacency-list", GraphPrinter::OutputFormat::Structure::kAdjList},
+            {"adj-list", GraphPrinter::OutputFormat::Structure::kAdjList},
+            {"edge-list", GraphPrinter::OutputFormat::Structure::kAdjList},
+            {"edges-list", GraphPrinter::OutputFormat::Structure::kAdjList},
+            {"list", GraphPrinter::OutputFormat::Structure::kAdjList},
 
-            {"adjacency-matrix", OutputBlock::Format::Structure::kAdjMatrix},
-            {"adj-matrix", OutputBlock::Format::Structure::kAdjMatrix},
-            {"matrix", OutputBlock::Format::Structure::kAdjMatrix},
+            {"adjacency-matrix", GraphPrinter::OutputFormat::Structure::kAdjMatrix},
+            {"adj-matrix", GraphPrinter::OutputFormat::Structure::kAdjMatrix},
+            {"matrix", GraphPrinter::OutputFormat::Structure::kAdjMatrix},
 
-            {"parent-array", OutputBlock::Format::Structure::kParentArray},
+            {"parent-array", GraphPrinter::OutputFormat::Structure::kParentArray},
     };
 
-    const std::unordered_map<Parser::String, OutputBlock::Format::Indexation> Parser::name_to_output_format_indexation_ = {
-            {"zero-based", OutputBlock::Format::Indexation::kZeroBased},
-            {"zero", OutputBlock::Format::Indexation::kZeroBased},
-            {"0-based", OutputBlock::Format::Indexation::kZeroBased},
-            {"0-base", OutputBlock::Format::Indexation::kZeroBased},
-            {"0", OutputBlock::Format::Indexation::kZeroBased},
+    const std::unordered_map<Parser::String, GraphPrinter::OutputFormat::Indexation> Parser::name_to_output_format_indexation_ = {
+            {"zero-based", GraphPrinter::OutputFormat::Indexation::kZeroBased},
+            {"zero", GraphPrinter::OutputFormat::Indexation::kZeroBased},
+            {"0-based", GraphPrinter::OutputFormat::Indexation::kZeroBased},
+            {"0-base", GraphPrinter::OutputFormat::Indexation::kZeroBased},
+            {"0", GraphPrinter::OutputFormat::Indexation::kZeroBased},
 
-            {"one-based", OutputBlock::Format::Indexation::kOneBased},
-            {"one", OutputBlock::Format::Indexation::kOneBased},
-            {"1-based", OutputBlock::Format::Indexation::kOneBased},
-            {"1-base", OutputBlock::Format::Indexation::kOneBased},
-            {"1", OutputBlock::Format::Indexation::kOneBased},
+            {"one-based", GraphPrinter::OutputFormat::Indexation::kOneBased},
+            {"one", GraphPrinter::OutputFormat::Indexation::kOneBased},
+            {"1-based", GraphPrinter::OutputFormat::Indexation::kOneBased},
+            {"1-base", GraphPrinter::OutputFormat::Indexation::kOneBased},
+            {"1", GraphPrinter::OutputFormat::Indexation::kOneBased},
     };
 
     void Parser::throw_exception(std::string message) {
@@ -261,7 +261,7 @@ namespace graph_constraint_solver {
         }
     }
 
-    OutputBlock::Format Parser::parse_output_format(nlohmann::json object) {
+    GraphPrinter::OutputFormat Parser::parse_output_format(nlohmann::json object) {
         auto format_token_name = token_to_name_.at(Token::kOutputFormat);
         if (!object.count(format_token_name)) {
             throw_exception("expected '" + format_token_name + "' field");
@@ -283,8 +283,8 @@ namespace graph_constraint_solver {
         size_t structure_options_cnt = 0;
         size_t indexation_options_cnt = 0;
 
-        auto structure = OutputBlock::Format::kDefaultStructure;
-        auto indexation = OutputBlock::Format::kDefaultIndexation;
+        auto structure = GraphPrinter::OutputFormat::kDefaultStructure;
+        auto indexation = GraphPrinter::OutputFormat::kDefaultIndexation;
 
         for (auto &option : format_array) {
             if (name_to_output_format_structure_.count(option)) {
@@ -299,7 +299,7 @@ namespace graph_constraint_solver {
                 throw_exception("undefined output-format '" + option + "'");
             }
         }
-        return OutputBlock::Format(structure, indexation);
+        return GraphPrinter::OutputFormat(structure, indexation);
     }
 
     ProgramBlock::Identificator Parser::parse_output_graph_id(nlohmann::json object) {
@@ -328,7 +328,7 @@ namespace graph_constraint_solver {
 
         auto graph_id = parse_output_graph_id(object);
         auto format = parse_output_format(object);
-        return std::make_shared<OutputBlock>(current_block_id_, graph_id, format);
+        return std::make_shared<OutputBlock>(current_block_id_, graph_id, format, id_to_program_block_ptr_[graph_id]);
     }
 
     std::shared_ptr<CreatorBlock> Parser::parse_creator_block(nlohmann::json object) {

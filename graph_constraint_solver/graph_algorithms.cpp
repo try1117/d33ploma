@@ -88,6 +88,8 @@ namespace graph_constraint_solver {
                 throw std::runtime_error("Cut points algorithm error: need undirected graph");
             }
 
+            cut_points_number = 0;
+
             for (int i = 0; i < graph_ptr->order(); ++i) {
                 if (!tin_[i]) {
                     find_cut_points(i, -1);
@@ -98,14 +100,16 @@ namespace graph_constraint_solver {
         void CutPointAlgorithm::find_cut_points(int v, int pr) {
             tin_[v] = fup_[v] = ++timer_;
             int children = 0;
+            bool marked_as_cut_point = false;
             for (auto child : graph_ptr_->adjacency_list()[v]) {
                 if (child != pr) {
                     if (!tin_[child]) {
                         find_cut_points(child, v);
                         ++children;
-                        if (fup_[child] >= tin_[v] && pr != -1) {
+                        if (fup_[child] >= tin_[v] && pr != -1 && !marked_as_cut_point) {
                             ++cut_points_number_;
                             cut_points_list_.emplace_back(v);
+                            marked_as_cut_point = true;
                         }
                         fup_[v] = std::min(fup_[v], fup_[child]);
                     }

@@ -9,6 +9,7 @@
 #include "program_block.h"
 #include "constraint_block.h"
 #include "graph.h"
+#include "graph_printer.h"
 
 namespace graph_constraint_solver {
 
@@ -39,9 +40,9 @@ namespace graph_constraint_solver {
 
         void cut_input_block(nlohmann::json &object, InputBlock::Arguments argument_values);
 
-        static const std::unordered_map<String, OutputBlock::Format::Structure> name_to_output_format_structure_;
-        static const std::unordered_map<String, OutputBlock::Format::Indexation> name_to_output_format_indexation_;
-        OutputBlock::Format parse_output_format(nlohmann::json object);
+        static const std::unordered_map<String, GraphPrinter::OutputFormat::Structure> name_to_output_format_structure_;
+        static const std::unordered_map<String, GraphPrinter::OutputFormat::Indexation> name_to_output_format_indexation_;
+        GraphPrinter::OutputFormat parse_output_format(nlohmann::json object);
         ProgramBlock::Identificator parse_output_graph_id(nlohmann::json object);
         std::shared_ptr<OutputBlock> parse_output_block(nlohmann::json object);
 

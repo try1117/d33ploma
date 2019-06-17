@@ -11,5 +11,5 @@ include_directories(${nlohmann_include_dir})
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(graph_constraint_solver main.cpp generator.h graph.h constraint.h generator.cpp graph.cpp constrained_graph.h constraint.cpp constrained_graph.cpp utils.h utils.cpp constraint_block.h constraint_block.cpp graph_algorithms.h graph_algorithms.cpp program_block.h program.h program.cpp parser.h parser.cpp program_block.cpp)
+add_executable(graph_constraint_solver main.cpp generator.h graph.h constraint.h generator.cpp graph.cpp constrained_graph.h constraint.cpp constrained_graph.cpp utils.h utils.cpp constraint_block.h constraint_block.cpp graph_algorithms.h graph_algorithms.cpp program_block.h program.h program.cpp parser.h parser.cpp program_block.cpp graph_printer.h graph_printer.cpp graph_components.h graph_components.cpp)
 #target_link_libraries(graph_constraint_solver ${Boost_LIBRARIES})
