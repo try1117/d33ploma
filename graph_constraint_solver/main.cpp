@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 //    int vertex_maximum_degree = std::stoi(argv[6]);
 //
 //    graph_constraint_solver::ConstrainedGraphPtr constrained_graph;
-//    auto constraints = std::make_shared<graph_constraint_solver::TreeBlock>(
+//    auto constraints = std::make_shared<graph_constraint_solver::TreeConstraintBlock>(
 //            graph_constraint_solver::Graph::Type::kUndirected,
 //            std::make_pair(1, 1),
 //            order, diameter, vertex_maximum_degree);

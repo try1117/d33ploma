@@ -1,6 +1,9 @@
 #ifndef GRAPH_CONSTRAINT_SOLVER_GRAPH_PRINTER_H
 #define GRAPH_CONSTRAINT_SOLVER_GRAPH_PRINTER_H
 
+#include <iostream>
+#include <fstream>
+
 #include "graph.h"
 
 namespace graph_constraint_solver {
@@ -8,7 +11,7 @@ namespace graph_constraint_solver {
     public:
         struct OutputFormat {
             enum class Structure {
-                kAdjList,
+                kEdgeList,
                 kAdjMatrix,
                 kParentArray,
             };
@@ -18,23 +21,34 @@ namespace graph_constraint_solver {
                 kOneBased,
             };
 
-            static const Structure kDefaultStructure = Structure::kAdjList;
+            using Filepath = std::string;
+
+            static const Structure kDefaultStructure = Structure::kEdgeList;
             static const Indexation kDefaultIndexation = Indexation::kOneBased;
+            static const Filepath kDefaultFilepath;
 
             Structure structure;
             Indexation indexation;
+            Filepath filepath;
 
-            OutputFormat(Structure structure = kDefaultStructure, Indexation indexation = kDefaultIndexation);
+            OutputFormat(Structure structure = kDefaultStructure,
+                    Indexation indexation = kDefaultIndexation,
+                    Filepath filepath = kDefaultFilepath);
         };
 
-        static void print(GraphPtr graph, OutputFormat output_format, bool debug);
+        GraphPrinter(GraphPtr graph, OutputFormat &output_format, bool debug);
 
     private:
-        static void print_undirected(GraphPtr graph, OutputFormat output_format);
-        static void print_directed(GraphPtr graph, OutputFormat ouptut_format);
+        std::ofstream output_file;
+        std::ostream& output() {
+            return output_file ? output_file : std::cout;
+        }
 
-        static void print_undirected_debug(GraphPtr graph, OutputFormat output_format);
-        static void print_directed_debug(GraphPtr graph, OutputFormat ouptut_format);
+        void print_undirected(GraphPtr graph, OutputFormat &output_format);
+        void print_directed(GraphPtr graph, OutputFormat &ouptut_format);
+
+        void print_undirected_debug(GraphPtr graph, OutputFormat &output_format);
+        void print_directed_debug(GraphPtr graph, OutputFormat &ouptut_format);
     };
 }
 

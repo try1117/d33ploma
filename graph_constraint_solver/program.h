@@ -8,9 +8,6 @@ namespace graph_constraint_solver {
     class Program {
     public:
         Program(Parser::JSONFile &json_file, InputBlock::Arguments arguments);
-
-    private:
-        std::shared_ptr<InputBlock> input_block_ptr_;
     };
 }
 

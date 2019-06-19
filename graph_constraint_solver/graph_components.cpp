@@ -55,6 +55,6 @@ namespace graph_constraint_solver {
 
     void GraphComponents::print(GraphPrinter::OutputFormat output_format, bool debug) {
         auto graph = merge_components();
-        GraphPrinter::print(graph, output_format, debug);
+        GraphPrinter(graph, output_format, debug);
     }
 }

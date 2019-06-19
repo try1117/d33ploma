@@ -93,27 +93,27 @@ namespace graph_constraint_solver {
 
     using ConstraintBlockPtr = std::shared_ptr<ConstraintBlock>;
 
-    class ConnectedBlock : public ConstraintBlock {
+    class ConnectedConstraintBlock : public ConstraintBlock {
     public:
-        ConnectedBlock();
+        ConnectedConstraintBlock();
     };
 
-    class TwoConnectedBlock : public ConstraintBlock {
+    class TwoConnectedConstraintBlock : public ConstraintBlock {
     public:
-        TwoConnectedBlock();
+        TwoConnectedConstraintBlock();
     };
 
-    class TwoEdgeConnectedBlock : public ConstraintBlock {
+    class TwoEdgeConnectedConstraintBlock : public ConstraintBlock {
     public:
-        TwoEdgeConnectedBlock();
+        TwoEdgeConnectedConstraintBlock();
     };
 
-    class TreeBlock : public ConstraintBlock {
+    class TreeConstraintBlock : public ConstraintBlock {
     public:
         static const int kMaximumComponentOrder = static_cast<int>(3e6);
 
-        TreeBlock();
-        TreeBlock(Graph::Type graph_type,
+        TreeConstraintBlock();
+        TreeConstraintBlock(Graph::Type graph_type,
                 Constraint::OrderBounds component_number,
                 Constraint::OrderBounds component_order_bounds,
                 Constraint::OrderBounds component_diameter_bounds = Constraint::OrderBounds(0, kMaximumComponentOrder),
@@ -123,9 +123,9 @@ namespace graph_constraint_solver {
         Constraint::OrderBounds get_component_diameter_bounds();
     };
 
-    class StronglyConnectedBlock : public ConstraintBlock {
+    class StronglyConnectedConstraintBlock : public ConstraintBlock {
     public:
-        StronglyConnectedBlock();
+        StronglyConnectedConstraintBlock();
     };
 }
 

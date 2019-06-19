@@ -13,13 +13,13 @@ namespace graph_constraint_solver {
         GraphComponentsPtr generate(ConstraintBlockPtr constraint_list_ptr);
         GraphComponentsPtr generate_block(ConstraintBlockPtr constraint_block_ptr);
 
-        GraphComponentsPtr generate_two_connected_block(std::shared_ptr<TwoConnectedBlock> constraint_block_ptr);
-        GraphComponentsPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedBlock> constraint_block_ptr,
+        GraphComponentsPtr generate_two_connected_block(std::shared_ptr<TwoConnectedConstraintBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_two_edge_connected_block(std::shared_ptr<TwoEdgeConnectedConstraintBlock> constraint_block_ptr,
                 bool check_satisfiability_only = false);
-        GraphComponentsPtr generate_connected_block(std::shared_ptr<ConnectedBlock> constraint_block_ptr);
-        GraphComponentsPtr generate_tree_block(std::shared_ptr<TreeBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_connected_block(std::shared_ptr<ConnectedConstraintBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_tree_block(std::shared_ptr<TreeConstraintBlock> constraint_block_ptr);
 
-        GraphComponentsPtr generate_strongly_connected_block(std::shared_ptr<StronglyConnectedBlock> constraint_block_ptr);
+        GraphComponentsPtr generate_strongly_connected_block(std::shared_ptr<StronglyConnectedConstraintBlock> constraint_block_ptr);
 
     private:
         // TODO: remove this 'go_with_the_winners' thing???
@@ -39,9 +39,8 @@ namespace graph_constraint_solver {
         GraphPtr generate_strongly_connected_component(Constraint::OrderBounds order_bounds,
                 Constraint::SizeBounds size_bounds);
 
-        GraphComponentsPtr generate_two_connected_graph(Graph::Type graph_type, Graph::OrderType order,
-                Graph::SizeType size, Graph::OrderType components_number,
-                Constraint::OrderBounds components_order_bounds);
+        GraphPtr generate_two_connected_component(Graph::Type graph_type,
+                Constraint::OrderBounds components_order_bounds, Constraint::SizeBounds component_size_bounds);
 
         GraphPtr generate_two_connected_component(Graph::Type graph_type, Graph::OrderType order, Graph::SizeType size,
                 Graph::OrderType min_loop_size, double loop_ear_probability = 0.0);

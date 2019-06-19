@@ -44,6 +44,7 @@ namespace graph_constraint_solver {
         static const std::unordered_map<String, GraphPrinter::OutputFormat::Indexation> name_to_output_format_indexation_;
         GraphPrinter::OutputFormat parse_output_format(nlohmann::json object);
         ProgramBlock::Identificator parse_output_graph_id(nlohmann::json object);
+        GraphPrinter::OutputFormat::Filepath parse_output_filepath(nlohmann::json object);
         std::shared_ptr<OutputBlock> parse_output_block(nlohmann::json object);
 
         std::shared_ptr<CreatorBlock> parse_creator_block(nlohmann::json object);
@@ -60,6 +61,8 @@ namespace graph_constraint_solver {
             kInputArguments,
             kOutputFormat,
             kOutputGraphId,
+            kOutputFile,
+            kOutputFileStdout,
         };
     };
 

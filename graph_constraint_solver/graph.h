@@ -15,21 +15,20 @@ namespace graph_constraint_solver {
     // in the future think about using boost::graph or something like that
     class Graph {
     public:
-        static const int kMaximumOrder = static_cast<int>(3e6);
-        static const int kMaximumSize = static_cast<int>(3e6);
-
         using OrderType = int;
         using SizeType = long long;
         using EdgeType = std::pair<OrderType, OrderType>;
+
+        static const OrderType kMaximumOrder = static_cast<OrderType>(3e6);
+        static const SizeType kMaximumSize = static_cast<SizeType>(3e6);
 
         enum class Type : unsigned char {
             kDirected,
             kUndirected,
         };
 
-        static GraphPtr create(int order, Type type);
-        Graph(int order = 0, Type type = Type::kUndirected);
-        // TODO: edge type???
+        static GraphPtr create(OrderType order, Type type);
+        Graph(OrderType order = 0, Type type = Type::kUndirected);
 
         Type type();
         // number of vertices

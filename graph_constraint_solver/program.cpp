@@ -1,10 +1,6 @@
 #include "program.h"
 
-//#include <iostream>
-//#include <fstream>
-
 #include "generator.h"
-#include "graph_algorithms.h"
 
 namespace graph_constraint_solver {
     Program::Program(Parser::JSONFile &json_file, InputBlock::Arguments arguments) {
@@ -15,7 +11,7 @@ namespace graph_constraint_solver {
         auto run_time = graph_constraint_solver::Utils::timeit([&]() {
             for (auto &output_block : output_blocks) {
                 // TODO: GraphPrinter enum for this debug mode
-                output_block->print_graph();
+                output_block->print_graph(false);
             }
         });
     }

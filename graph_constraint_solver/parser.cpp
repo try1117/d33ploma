@@ -42,17 +42,19 @@ namespace graph_constraint_solver {
             {Token::kInputArguments, "arguments"},
             {Token::kOutputFormat, "format"},
             {Token::kOutputGraphId, "graph-id"},
+            {Token::kOutputFile, "file"},
+            {Token::kOutputFileStdout, "stdout"},
     };
 
     const ProgramBlock::Identificator Parser::input_reserved_id_("input");
     const ProgramBlock::Identificator Parser::output_reserved_id_("output");
 
     const std::unordered_map<Parser::String, GraphPrinter::OutputFormat::Structure> Parser::name_to_output_format_structure_ = {
-            {"adjacency-list", GraphPrinter::OutputFormat::Structure::kAdjList},
-            {"adj-list", GraphPrinter::OutputFormat::Structure::kAdjList},
-            {"edge-list", GraphPrinter::OutputFormat::Structure::kAdjList},
-            {"edges-list", GraphPrinter::OutputFormat::Structure::kAdjList},
-            {"list", GraphPrinter::OutputFormat::Structure::kAdjList},
+            {"adjacency-list", GraphPrinter::OutputFormat::Structure::kEdgeList},
+            {"adj-list", GraphPrinter::OutputFormat::Structure::kEdgeList},
+            {"edge-list", GraphPrinter::OutputFormat::Structure::kEdgeList},
+            {"edges-list", GraphPrinter::OutputFormat::Structure::kEdgeList},
+            {"list", GraphPrinter::OutputFormat::Structure::kEdgeList},
 
             {"adjacency-matrix", GraphPrinter::OutputFormat::Structure::kAdjMatrix},
             {"adj-matrix", GraphPrinter::OutputFormat::Structure::kAdjMatrix},
@@ -186,6 +188,7 @@ namespace graph_constraint_solver {
             return;
         }
 
+        current_block_id_ = input_block_id;
         auto input_block_object = object.at(input_block_id);
 
         // when id = "input", check that BlockType is undefined or equal to "input"
@@ -212,7 +215,7 @@ namespace graph_constraint_solver {
 
         if (arguments_names.size() != arguments_values.size()) {
             throw_exception("expected " + std::to_string(arguments_names.size()) + " arguments but " +
-            std::to_string(arguments_values.size()) + " given");
+            std::to_string(arguments_values.size()) + " were given");
         }
 
         object.erase(input_block_id);
@@ -263,8 +266,12 @@ namespace graph_constraint_solver {
 
     GraphPrinter::OutputFormat Parser::parse_output_format(nlohmann::json object) {
         auto format_token_name = token_to_name_.at(Token::kOutputFormat);
+        auto structure = GraphPrinter::OutputFormat::kDefaultStructure;
+        auto indexation = GraphPrinter::OutputFormat::kDefaultIndexation;
+        auto filepath = parse_output_filepath(object);
+
         if (!object.count(format_token_name)) {
-            throw_exception("expected '" + format_token_name + "' field");
+            return GraphPrinter::OutputFormat(structure, indexation, filepath);
         }
 
         nlohmann::json format_json_array = object.at(format_token_name);
@@ -283,9 +290,6 @@ namespace graph_constraint_solver {
         size_t structure_options_cnt = 0;
         size_t indexation_options_cnt = 0;
 
-        auto structure = GraphPrinter::OutputFormat::kDefaultStructure;
-        auto indexation = GraphPrinter::OutputFormat::kDefaultIndexation;
-
         for (auto &option : format_array) {
             if (name_to_output_format_structure_.count(option)) {
                 ++structure_options_cnt;
@@ -299,7 +303,7 @@ namespace graph_constraint_solver {
                 throw_exception("undefined output-format '" + option + "'");
             }
         }
-        return GraphPrinter::OutputFormat(structure, indexation);
+        return GraphPrinter::OutputFormat(structure, indexation, filepath);
     }
 
     ProgramBlock::Identificator Parser::parse_output_graph_id(nlohmann::json object) {
@@ -316,6 +320,23 @@ namespace graph_constraint_solver {
             throw_exception("unknown " + token_name + " '" + id + "'");
         }
         return id;
+    }
+
+    GraphPrinter::OutputFormat::Filepath Parser::parse_output_filepath(nlohmann::json object) {
+        auto file_token_name = token_to_name_.at(Token::kOutputFile);
+        if (!object.count(file_token_name)) {
+            return GraphPrinter::OutputFormat::kDefaultFilepath;
+        }
+
+        nlohmann::json filepath_json = object.at(file_token_name);
+        if (!filepath_json.is_string()) {
+            throw_exception("expected file path or 'stdout'");
+        }
+        Parser::String filepath = filepath_json;
+        if (filepath == token_to_name_.at(Token::kOutputFileStdout)) {
+            return GraphPrinter::OutputFormat::kDefaultFilepath;
+        }
+        return filepath;
     }
 
     std::shared_ptr<OutputBlock> Parser::parse_output_block(nlohmann::json object) {

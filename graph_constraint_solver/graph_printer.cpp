@@ -1,17 +1,33 @@
 #include "graph_printer.h"
 
 #include <iostream>
+#include <fstream>
 
 #include "graph_algorithms.h"
+#include "utils.h"
 
 namespace graph_constraint_solver {
 
-    GraphPrinter::OutputFormat::OutputFormat(Structure structure, Indexation indexation)
-            : structure(structure), indexation(indexation) {
+    const GraphPrinter::OutputFormat::Filepath GraphPrinter::OutputFormat::kDefaultFilepath = "";
+
+    GraphPrinter::OutputFormat::OutputFormat(Structure structure, Indexation indexation, Filepath filepath)
+        : structure(structure), indexation(indexation), filepath(filepath) {
 
     }
 
-    void GraphPrinter::print(GraphPtr graph, OutputFormat output_format, bool debug) {
+    GraphPrinter::GraphPrinter(GraphPtr graph, OutputFormat &output_format, bool debug) {
+        if (!output_format.filepath.empty()) {
+            output_file.open(output_format.filepath);
+            if (!output_file) {
+                throw std::runtime_error("Can't open file " + output_format.filepath);
+            }
+        }
+        else {
+            std::ios_base::sync_with_stdio(false);
+//            std::cin.tie(0);
+//            std::cout.tie(0);
+        }
+
         if (!debug) {
             if (graph->type() == Graph::Type::kUndirected) {
                 print_undirected(graph, output_format);
@@ -30,42 +46,42 @@ namespace graph_constraint_solver {
         }
     }
 
-    void GraphPrinter::print_undirected(GraphPtr graph, OutputFormat output_format) {
+    void GraphPrinter::print_undirected(GraphPtr graph, OutputFormat &output_format) {
         if (graph->empty()) return;
         size_t add_to_index = output_format.indexation == GraphPrinter::OutputFormat::Indexation::kOneBased;
         // now only print adj_list
 
         //  TODO: OutputFormat parameter to specify whether we need to print 'order' and 'size'
-        std::cout << graph->order() << " " << graph->size() << "\n";
+        output() << graph->order() << " " << graph->size() << "\n";
 
         for (int i = 0; i < graph->order(); ++i) {
             for (auto child : graph->adjacency_list().at(i)) {
                 if (i > child) {
                     continue;
                 }
-                std::cout << i + add_to_index << " " << child + add_to_index << "\n";
+                output() << i + add_to_index << " " << child + add_to_index << "\n";
 //                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
             }
         }
     }
 
-    void GraphPrinter::print_directed(GraphPtr graph, OutputFormat output_format) {
+    void GraphPrinter::print_directed(GraphPtr graph, OutputFormat &output_format) {
         if (graph->empty()) return;
         size_t add_to_index = output_format.indexation == GraphPrinter::OutputFormat::Indexation::kOneBased;
         // now only print adj_list
 
         //  TODO: OutputFormat parameter to specify whether we need to print 'order' and 'size'
-        std::cout << graph->order() << " " << graph->size() << "\n";
+        output() << graph->order() << " " << graph->size() << "\n";
 
         for (int i = 0; i < graph->order(); ++i) {
             for (auto child : graph->adjacency_list().at(i)) {
-                std::cout << i + add_to_index << " " << child + add_to_index << "\n";
+                output() << i + add_to_index << " " << child + add_to_index << "\n";
 //                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
             }
         }
     }
 
-    void GraphPrinter::print_undirected_debug(GraphPtr graph, OutputFormat output_format) {
+    void GraphPrinter::print_undirected_debug(GraphPtr graph, OutputFormat &output_format) {
 
         size_t add_to_index = output_format.indexation == GraphPrinter::OutputFormat::Indexation::kOneBased;
 
@@ -106,8 +122,24 @@ namespace graph_constraint_solver {
         }
     }
 
-    void GraphPrinter::print_directed_debug(GraphPtr graph, OutputFormat output_format) {
-        print_directed(graph, output_format);
+    void GraphPrinter::print_directed_debug(GraphPtr graph, OutputFormat &output_format) {
+        size_t add_to_index = output_format.indexation == GraphPrinter::OutputFormat::Indexation::kOneBased;
+        std::cout << "Graph order : " << graph->order() << std::endl;
+        std::cout << "Graph size  : " << graph->size() << std::endl;
+        std::cout << std::endl;
+
+        std::set<std::pair<int, int>> edges;
+        for (int i = 0; i < graph->order(); ++i) {
+            for (auto child : graph->adjacency_list()[i]) {
+                if (edges.count({i, child})) {
+                    std::cout << "parallel" << std::endl;
+                }
+                edges.insert({i, child});
+//                    printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
+                std::cout << "g.add_edge(" << i + add_to_index << ", " << child + add_to_index << ", color='blue')\n";
+            }
+        }
+//        print_directed(graph, output_format);
     }
 
 }

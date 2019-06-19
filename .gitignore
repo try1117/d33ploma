@@ -2,3 +2,5 @@ libs/
 networkx_test.py
 test/
 docs/
+benchmark/
+output.txt
