@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+//#define GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+
 #include "utils.h"
 #include "generator.h"
 #include "graph_algorithms.h"
@@ -27,13 +29,15 @@ int main(int argc, char *argv[]) {
     graph_constraint_solver::Parser::JSONFile json_file;
     try {
         auto file_name = argv[2];
+        json_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         json_file.open(file_name);
     }
     catch (std::exception &e) {
-        throw std::runtime_error("graph_constraint_solver file error: " + static_cast<std::string>(e.what()));
+//        throw std::runtime_error("graph_constraint_solver file error: " + static_cast<std::string>(e.what()));
+        throw std::runtime_error("graph_constraint_solver error: can't open file " + static_cast<std::string>(argv[2]));
     }
 
-    graph_constraint_solver::impl::increase_stack_size();
+//    graph_constraint_solver::impl::increase_stack_size();
 
     graph_constraint_solver::InputBlock::Arguments arguments(argv + 3, argv + argc);
 

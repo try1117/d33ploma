@@ -99,4 +99,8 @@ namespace graph_constraint_solver {
     };
 }
 
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "program_block.cpp"
+#endif
+
 #endif //GRAPH_CONSTRAINT_SOLVER_PROGRAM_BLOCK_H

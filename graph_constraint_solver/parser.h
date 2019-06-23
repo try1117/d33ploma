@@ -83,4 +83,8 @@ namespace graph_constraint_solver {
     }
 }
 
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "parser.cpp"
+#endif
+
 #endif //GRAPH_CONSTRAINT_SOLVER_PARSER_H

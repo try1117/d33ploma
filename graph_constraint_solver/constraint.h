@@ -6,6 +6,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 #include "graph.h"
 
@@ -152,7 +153,7 @@ namespace graph_constraint_solver {
         }
 
         std::pair<T, T> bounds() {
-            return std::pair(left_bound_, right_bound_);
+            return std::pair<T, T>(left_bound_, right_bound_);
         }
 
         SatisfactionVerdict check() override {
@@ -224,5 +225,9 @@ namespace graph_constraint_solver {
         SatisfactionVerdict check() override;
     };
 }
+
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "constraint.cpp"
+#endif
 
 #endif //GRAPH_CONSTRAINT_SOLVER_CONSTRAINT_H

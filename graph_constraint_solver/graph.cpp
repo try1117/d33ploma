@@ -1,5 +1,7 @@
 #include "graph.h"
 
+#include <algorithm>
+
 #include "utils.h"
 
 namespace graph_constraint_solver {

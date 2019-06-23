@@ -206,7 +206,7 @@ namespace graph_constraint_solver {
                 if (!arguments_array.is_array()) {
                     throw std::exception();
                 }
-                arguments_names = static_cast<InputBlock::Arguments>(arguments_array);
+                arguments_names = arguments_array.get<InputBlock::Arguments>();
             }
             catch (...) {
                 throw_exception("'" + arguments_token_name + "' expected to be an array of strings - example: [\"param1\", \"param2\"]");
@@ -281,7 +281,7 @@ namespace graph_constraint_solver {
             if (!format_json_array.is_array()) {
                 throw std::exception();
             }
-            format_array = static_cast<std::vector<Parser::String>>(format_json_array);
+            format_array = format_json_array.get<std::vector<Parser::String>>();
         }
         catch (...) {
             throw_exception("'" + format_token_name + "' expected array of strings");
@@ -440,18 +440,18 @@ namespace graph_constraint_solver {
                 if (!value.is_number_integer()) {
                     throw std::runtime_error("Parser error: '" + key + "' field expected a single integer");
                 }
-                return std::make_shared<ComponentVertexMaxDegreeConstraint>(static_cast<Graph::OrderType>(value));
+                return std::make_shared<ComponentVertexMaxDegreeConstraint>(value.get<Graph::OrderType>());
             }
                 // BoundedConstraints
             else {
                 try {
                     if (value.is_number_integer()) {
-                        auto number = static_cast<long long>(value);
+                        auto number = value.get<long long>();
                         return Constraint::create_bounded_ptr(constraint_type, number, number);
                     }
                     else if (value.is_array()) {
                         // TODO: replace 'long long' with ???
-                        auto numbers = static_cast<std::vector<long long>>(value);
+                        auto numbers = value.get<std::vector<long long>>();
                         if (numbers.size() == 0 || numbers.size() > 2) {
                             throw;
                         }

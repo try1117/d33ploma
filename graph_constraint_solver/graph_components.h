@@ -27,4 +27,8 @@ namespace graph_constraint_solver {
     using GraphComponentsPtr = std::shared_ptr<GraphComponents>;
 }
 
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "graph_components.cpp"
+#endif
+
 #endif //GRAPH_CONSTRAINT_SOLVER_GRAPH_COMPONENTS_H

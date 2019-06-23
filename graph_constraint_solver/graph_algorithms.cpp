@@ -1,6 +1,6 @@
 #include "graph_algorithms.h"
 
-#include <sys/resource.h>
+//#include <sys/resource.h>
 
 namespace graph_constraint_solver {
     void GraphAlgorithms::find_bridges(GraphPtr graph_ptr, std::pair<int, int> &bridges_number,
@@ -19,23 +19,23 @@ namespace graph_constraint_solver {
 
         // from stackoverflow
         // https://stackoverflow.com/questions/2275550/change-stack-size-for-a-c-application-in-linux-during-compilation-with-gnu-com/2284691#2284691
-        bool increase_stack_size() {
-            const rlim_t kStackSize = 64 * 1024 * 1024;
-            struct rlimit rl;
-            int result;
-
-            result = getrlimit(RLIMIT_STACK, &rl);
-            if (result == 0)
-            {
-                if (rl.rlim_cur < kStackSize)
-                {
-                    rl.rlim_cur = kStackSize;
-                    result = setrlimit(RLIMIT_STACK, &rl);
-                    if (result != 0) return false;
-                }
-            }
-            return true;
-        }
+//        bool increase_stack_size() {
+//            const rlim_t kStackSize = 64 * 1024 * 1024;
+//            struct rlimit rl;
+//            int result;
+//
+//            result = getrlimit(RLIMIT_STACK, &rl);
+//            if (result == 0)
+//            {
+//                if (rl.rlim_cur < kStackSize)
+//                {
+//                    rl.rlim_cur = kStackSize;
+//                    result = setrlimit(RLIMIT_STACK, &rl);
+//                    if (result != 0) return false;
+//                }
+//            }
+//            return true;
+//        }
 
         BridgeAlgorithm::BridgeAlgorithm(graph_constraint_solver::GraphPtr graph_ptr, std::pair<int, int> &bridges_number,
                 std::vector<std::pair<int, int>> &bridges_list)

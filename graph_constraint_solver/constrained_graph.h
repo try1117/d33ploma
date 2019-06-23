@@ -33,4 +33,8 @@ namespace graph_constraint_solver {
     using ConstrainedGraphPtr = std::shared_ptr<ConstrainedGraph>;
 }
 
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "constrained_graph.cpp"
+#endif
+
 #endif //GRAPH_CONSTRAINT_SOLVER_CONSTRAINED_GRAPH_H

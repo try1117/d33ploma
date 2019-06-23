@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "graph_algorithms.h"
 #include "utils.h"
@@ -15,18 +16,20 @@ namespace graph_constraint_solver {
 
     }
 
+    std::ostream& GraphPrinter::output() {
+        return output_file_.badbit ? std::cout : output_file_;
+    }
+
     GraphPrinter::GraphPrinter(GraphPtr graph, OutputFormat &output_format, bool debug) {
         if (!output_format.filepath.empty()) {
-            output_file.open(output_format.filepath);
-            if (!output_file) {
+            output_file_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+            output_file_.open(output_format.filepath, std::ofstream::out);
+            if (!output_file_) {
                 throw std::runtime_error("Can't open file " + output_format.filepath);
             }
         }
-        else {
-            std::ios_base::sync_with_stdio(false);
-//            std::cin.tie(0);
-//            std::cout.tie(0);
-        }
+        std::ios_base::sync_with_stdio(false);
+//        std::cin.tie(0);
 
         if (!debug) {
             if (graph->type() == Graph::Type::kUndirected) {
@@ -53,6 +56,7 @@ namespace graph_constraint_solver {
 
         //  TODO: OutputFormat parameter to specify whether we need to print 'order' and 'size'
         output() << graph->order() << " " << graph->size() << "\n";
+//        output() << graph->order() << " " << graph->size() << "\n";
 
         for (int i = 0; i < graph->order(); ++i) {
             for (auto child : graph->adjacency_list().at(i)) {
@@ -60,7 +64,6 @@ namespace graph_constraint_solver {
                     continue;
                 }
                 output() << i + add_to_index << " " << child + add_to_index << "\n";
-//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
             }
         }
     }
@@ -76,7 +79,6 @@ namespace graph_constraint_solver {
         for (int i = 0; i < graph->order(); ++i) {
             for (auto child : graph->adjacency_list().at(i)) {
                 output() << i + add_to_index << " " << child + add_to_index << "\n";
-//                printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
             }
         }
     }
@@ -108,7 +110,6 @@ namespace graph_constraint_solver {
                         std::cout << "parallel" << std::endl;
                     }
                     edges.insert({i, child});
-//                    printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
                     std::cout << "g.add_edge(" << i + add_to_index << ", " << child + add_to_index
                         << ", color='" << (bridges_set.count({i, child}) ? "red" : "blue") << "')\n";
                 }
@@ -135,7 +136,6 @@ namespace graph_constraint_solver {
                     std::cout << "parallel" << std::endl;
                 }
                 edges.insert({i, child});
-//                    printf("g.add_edge(%d, %d, color='%s')\n", i, child, bridges_set.count({i, child}) ? "red" : "blue");
                 std::cout << "g.add_edge(" << i + add_to_index << ", " << child + add_to_index << ", color='blue')\n";
             }
         }

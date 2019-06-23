@@ -63,4 +63,8 @@ namespace graph_constraint_solver {
     };
 }
 
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "generator.cpp"
+#endif
+
 #endif //GRAPH_CONSTRAINT_SOLVER_GENERATOR_H

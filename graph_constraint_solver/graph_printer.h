@@ -39,10 +39,8 @@ namespace graph_constraint_solver {
         GraphPrinter(GraphPtr graph, OutputFormat &output_format, bool debug);
 
     private:
-        std::ofstream output_file;
-        std::ostream& output() {
-            return output_file ? output_file : std::cout;
-        }
+        std::ofstream output_file_;
+        std::ostream& output();
 
         void print_undirected(GraphPtr graph, OutputFormat &output_format);
         void print_directed(GraphPtr graph, OutputFormat &ouptut_format);
@@ -51,5 +49,9 @@ namespace graph_constraint_solver {
         void print_directed_debug(GraphPtr graph, OutputFormat &ouptut_format);
     };
 }
+
+#ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER
+#include "graph_printer.cpp"
+#endif
 
 #endif //GRAPH_CONSTRAINT_SOLVER_GRAPH_PRINTER_H
