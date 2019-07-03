@@ -51,6 +51,14 @@ namespace graph_constraint_solver {
         GraphPtr generate_connected_component(Graph::Type graph_type, Constraint::OrderBounds order_bounds,
                 Constraint::SizeBounds size_bounds, Constraint::OrderBounds cut_point_bounds, Graph::OrderType bridges);
 
+        // TODO: refactor all these DFSes
+
+        GraphPtr replace_with_components(GraphPtr graph, ConstraintBlockPtr vertices_block, ConstraintBlockPtr edges_block);
+        void replace_with_components_impl(GraphPtr result, GraphPtr skeleton,
+                std::vector<GraphPtr> &vertex_components, std::vector<std::vector<GraphPtr>> &edge_components,
+                std::vector<size_t> &vertex_components_shift,
+                std::vector<char> &used, size_t &shift, size_t skeleton_vertex);
+
         void connect_components_in_vertices(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton);
         void connect_components_in_vertices_dfs(GraphPtr graph, GraphComponentsPtr components, GraphPtr skeleton,
                 std::vector<std::vector<std::pair<int, int>>> &selected_vertices, int &next_free_index,

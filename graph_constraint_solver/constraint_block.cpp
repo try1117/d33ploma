@@ -15,7 +15,7 @@ namespace graph_constraint_solver {
         {ComponentType::kStronglyConnected, "Strongly-connected"}
     });
 
-    std::shared_ptr<ConstraintBlock> ConstraintBlock::create(ComponentType component_type) {
+    ConstraintBlockPtr ConstraintBlock::create(ComponentType component_type) {
         switch (component_type) {
             case ComponentType::kConnected: return std::make_shared<ConnectedConstraintBlock>();
             case ComponentType::kTwoConnected: return std::make_shared<TwoConnectedConstraintBlock>();
@@ -96,6 +96,14 @@ namespace graph_constraint_solver {
         for (auto &c : constraints_) {
             c.second->bind_graph(graph_ptr);
         }
+    }
+
+    ConstraintBlockPtr& ConstraintBlock::vertices_block() {
+        return vertices_block_;
+    }
+
+    ConstraintBlockPtr& ConstraintBlock::edges_block() {
+        return edges_block_;
     }
 
 //    void ConstraintBlock::add_edge(int from, int to) {

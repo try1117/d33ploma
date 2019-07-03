@@ -44,6 +44,8 @@ namespace graph_constraint_solver {
             {Token::kOutputGraphId, "graph-id"},
             {Token::kOutputFile, "file"},
             {Token::kOutputFileStdout, "stdout"},
+            {Token::kCreatorVertexReference, "vertex-id"},
+            {Token::kCreatorEdgeReference, "edge-id"},
     };
 
     const ProgramBlock::Identificator Parser::input_reserved_id_("input");
@@ -75,6 +77,49 @@ namespace graph_constraint_solver {
             {"1-based", GraphPrinter::OutputFormat::Indexation::kOneBased},
             {"1-base", GraphPrinter::OutputFormat::Indexation::kOneBased},
             {"1", GraphPrinter::OutputFormat::Indexation::kOneBased},
+    };
+
+    const std::unordered_map<Parser::String, Constraint::Type> Parser::name_to_constraint_type_ = {
+            {"graph-type", Constraint::Type::kGraphType},
+            {"total-order", Constraint::Type::kOrder},
+            {"total-size", Constraint::Type::kSize},
+            {"total-bridges", Constraint::Type::kBridge},
+            {"total-cutpoints", Constraint::Type::kCutPoint},
+
+            {"component-number", Constraint::Type::kComponentNumber},
+            {"components-number", Constraint::Type::kComponentNumber},
+
+            {"order", Constraint::Type::kComponentOrder},
+            {"v", Constraint::Type::kComponentOrder},
+            {"vertex", Constraint::Type::kComponentOrder},
+            {"vertices", Constraint::Type::kComponentOrder},
+
+            {"size", Constraint::Type::kComponentSize},
+            {"e", Constraint::Type::kComponentSize},
+            {"edge", Constraint::Type::kComponentSize},
+            {"edges", Constraint::Type::kComponentSize},
+
+            {"cut-point", Constraint::Type::kComponentCutPoint},
+            {"cut-points", Constraint::Type::kComponentCutPoint},
+            {"cutpoint", Constraint::Type::kComponentCutPoint},
+            {"cutpoints", Constraint::Type::kComponentCutPoint},
+
+            {"bridge", Constraint::Type::kComponentBridge},
+            {"bridges", Constraint::Type::kComponentBridge},
+
+            {"diameter", Constraint::Type::kComponentDiameter},
+
+            {"vertex-maximum-degree", Constraint::Type::kComponentVertexMaxDegree},
+            {"vertex-max-degree", Constraint::Type::kComponentVertexMaxDegree},
+            {"maximum-degree", Constraint::Type::kComponentVertexMaxDegree},
+            {"max-degree", Constraint::Type::kComponentVertexMaxDegree},
+    };
+
+    const std::unordered_map<Parser::String, Graph::Type> Parser::name_graph_type_ = {
+            {"undirected", Graph::Type::kUndirected},
+            {"undir", Graph::Type::kUndirected},
+            {"directed", Graph::Type::kDirected},
+            {"dir", Graph::Type::kDirected},
     };
 
     void Parser::throw_exception(std::string message) {
@@ -128,9 +173,16 @@ namespace graph_constraint_solver {
         auto json_object = nlohmann::json::parse(text);
         cut_input_block(json_object, arguments);
 
+        std::vector<String> sorted_names;
         for (auto &element : json_object.items()) {
-            auto id = element.key();
-            auto value = element.value();
+            sorted_names.push_back(element.key());
+        }
+        sort(sorted_names.begin(), sorted_names.end(), [&](const String &a, const String &b) {
+            return text.find(a) < text.find(b);
+        });
+
+        for (auto id : sorted_names) {
+            auto value = json_object.at(id);
             current_block_id_ = id;
 //            std::cerr << "Parse " + id << std::endl;
             if (id_to_program_block_ptr_.count(id)) {
@@ -354,118 +406,97 @@ namespace graph_constraint_solver {
 
     std::shared_ptr<CreatorBlock> Parser::parse_creator_block(nlohmann::json object) {
         auto component_type = parse_component_type(object);
+        auto vertex_reference_constraint_block_ptr = parse_vertex_reference(object);
+        auto edge_reference_constraint_block_ptr = parse_edge_reference(object);
+
         auto constraint_block_ptr = ConstraintBlock::create(component_type);
-        impl::CreatorBlockParser(constraint_block_ptr, object);
+        auto constraints = parse_constraints(object);
+        constraint_block_ptr->add_constraints(constraints);
+        constraint_block_ptr->vertices_block() = vertex_reference_constraint_block_ptr;
+        constraint_block_ptr->edges_block() = edge_reference_constraint_block_ptr;
+
         return std::make_shared<CreatorBlock>(current_block_id_, constraint_block_ptr);
     }
 
-    namespace impl {
-        const std::unordered_map<Parser::String, Constraint::Type> CreatorBlockParser::name_to_constraint_type_ = {
-                {"graph-type", Constraint::Type::kGraphType},
-                {"total-order", Constraint::Type::kOrder},
-                {"total-size", Constraint::Type::kSize},
-                {"total-bridges", Constraint::Type::kBridge},
-                {"total-cutpoints", Constraint::Type::kCutPoint},
-
-                {"component-number", Constraint::Type::kComponentNumber},
-                {"components-number", Constraint::Type::kComponentNumber},
-
-                {"order", Constraint::Type::kComponentOrder},
-                {"v", Constraint::Type::kComponentOrder},
-                {"vertex", Constraint::Type::kComponentOrder},
-                {"vertices", Constraint::Type::kComponentOrder},
-
-                {"size", Constraint::Type::kComponentSize},
-                {"e", Constraint::Type::kComponentSize},
-                {"edge", Constraint::Type::kComponentSize},
-                {"edges", Constraint::Type::kComponentSize},
-
-                {"cut-point", Constraint::Type::kComponentCutPoint},
-                {"cut-points", Constraint::Type::kComponentCutPoint},
-                {"cutpoint", Constraint::Type::kComponentCutPoint},
-                {"cutpoints", Constraint::Type::kComponentCutPoint},
-
-                {"bridge", Constraint::Type::kComponentBridge},
-                {"bridges", Constraint::Type::kComponentBridge},
-
-                {"diameter", Constraint::Type::kComponentDiameter},
-
-                {"vertex-maximum-degree", Constraint::Type::kComponentVertexMaxDegree},
-                {"vertex-max-degree", Constraint::Type::kComponentVertexMaxDegree},
-                {"maximum-degree", Constraint::Type::kComponentVertexMaxDegree},
-                {"max-degree", Constraint::Type::kComponentVertexMaxDegree},
-        };
-
-        const std::unordered_map<Parser::String, Graph::Type> CreatorBlockParser::name_graph_type_ = {
-                {"undirected", Graph::Type::kUndirected},
-                {"undir", Graph::Type::kUndirected},
-                {"directed", Graph::Type::kDirected},
-                {"dir", Graph::Type::kDirected},
-        };
-
-        CreatorBlockParser::CreatorBlockParser(ConstraintBlockPtr constraint_block_ptr, nlohmann::json object) {
-            auto constraints = parse_constraints(object);
-            constraint_block_ptr->add_constraints(constraints);
+    ConstraintBlockPtr Parser::parse_vertex_reference(nlohmann::json &object, Token token) {
+        auto token_name = token_to_name_.at(token);
+        if (!object.count(token_name)) {
+            return nullptr;
         }
-
-        std::vector<ConstraintPtr> CreatorBlockParser::parse_constraints(nlohmann::json object) {
-            std::vector<ConstraintPtr> result;
-            for (auto &element : object.items()) {
-                result.push_back(parse_constraint(element.key(), element.value()));
-            }
-            return result;
+        String reference_id = object.at(token_name);
+        if (!id_to_program_block_ptr_.count(reference_id)) {
+            throw_exception("can't find id '" + reference_id + "'");
         }
-
-        Constraint::Type CreatorBlockParser::parse_constraint_type(Parser::String name) {
-            if (!name_to_constraint_type_.count(name)) {
-                throw std::runtime_error("Parser error: expected constraint-type but got '" + name + "'");
-            }
-            return name_to_constraint_type_.at(name);
+        auto program_block = id_to_program_block_ptr_.at(reference_id);
+        if (program_block->type() != ProgramBlock::Type::kCreator) {
+            throw_exception("block with id '" + reference_id + "' must have creator-type");
         }
+        object.erase(token_name);
+        auto creator_block_ptr = std::static_pointer_cast<CreatorBlock>(program_block);
+        return creator_block_ptr->get_constraint_block_ptr();
+    }
 
-        Graph::Type CreatorBlockParser::parse_graph_type(Parser::String name) {
-            if (!name_graph_type_.count(name)) {
-                throw std::runtime_error("Parser error: expected graph-type but got '" + name + "'");
-            }
-            return name_graph_type_.at(name);
+    ConstraintBlockPtr Parser::parse_edge_reference(nlohmann::json &object) {
+        return parse_vertex_reference(object, Token::kCreatorEdgeReference);
+    }
+
+    std::vector<ConstraintPtr> Parser::parse_constraints(nlohmann::json object) {
+        std::vector<ConstraintPtr> result;
+        for (auto &element : object.items()) {
+            result.push_back(parse_constraint(element.key(), element.value()));
         }
+        return result;
+    }
 
-        ConstraintPtr CreatorBlockParser::parse_constraint(Parser::String key, nlohmann::json value) {
-            auto constraint_type = parse_constraint_type(key);
-            if (constraint_type == Constraint::Type::kGraphType) {
-                auto graph_type = parse_graph_type(value);
-                return std::make_shared<GraphTypeConstraint>(graph_type);
+    Constraint::Type Parser::parse_constraint_type(Parser::String name) {
+        if (!name_to_constraint_type_.count(name)) {
+            throw std::runtime_error("Parser error: expected constraint-type but got '" + name + "'");
+        }
+        return name_to_constraint_type_.at(name);
+    }
+
+    Graph::Type Parser::parse_graph_type(Parser::String name) {
+        if (!name_graph_type_.count(name)) {
+            throw std::runtime_error("Parser error: expected graph-type but got '" + name + "'");
+        }
+        return name_graph_type_.at(name);
+    }
+
+    ConstraintPtr Parser::parse_constraint(Parser::String key, nlohmann::json value) {
+        auto constraint_type = parse_constraint_type(key);
+        if (constraint_type == Constraint::Type::kGraphType) {
+            auto graph_type = parse_graph_type(value);
+            return std::make_shared<GraphTypeConstraint>(graph_type);
+        }
+        else if (constraint_type == Constraint::Type::kComponentVertexMaxDegree) {
+            if (!value.is_number_integer()) {
+                throw std::runtime_error("Parser error: '" + key + "' field expected a single integer");
             }
-            else if (constraint_type == Constraint::Type::kComponentVertexMaxDegree) {
-                if (!value.is_number_integer()) {
-                    throw std::runtime_error("Parser error: '" + key + "' field expected a single integer");
+            return std::make_shared<ComponentVertexMaxDegreeConstraint>(value.get<Graph::OrderType>());
+        }
+            // BoundedConstraints
+        else {
+            try {
+                if (value.is_number_integer()) {
+                    auto number = value.get<long long>();
+                    return Constraint::create_bounded_ptr(constraint_type, number, number);
                 }
-                return std::make_shared<ComponentVertexMaxDegreeConstraint>(value.get<Graph::OrderType>());
+                else if (value.is_array()) {
+                    // TODO: replace 'long long' with ???
+                    auto numbers = value.get<std::vector<long long>>();
+                    if (numbers.size() == 0 || numbers.size() > 2) {
+                        throw;
+                    }
+                    long long left_bound = numbers[0];
+                    long long right_bound = numbers.size() == 2 ? numbers[1] : left_bound;
+                    return Constraint::create_bounded_ptr(constraint_type, left_bound, right_bound);
+                }
+                else {
+                    throw std::exception();
+                }
             }
-                // BoundedConstraints
-            else {
-                try {
-                    if (value.is_number_integer()) {
-                        auto number = value.get<long long>();
-                        return Constraint::create_bounded_ptr(constraint_type, number, number);
-                    }
-                    else if (value.is_array()) {
-                        // TODO: replace 'long long' with ???
-                        auto numbers = value.get<std::vector<long long>>();
-                        if (numbers.size() == 0 || numbers.size() > 2) {
-                            throw;
-                        }
-                        long long left_bound = numbers[0];
-                        long long right_bound = numbers.size() == 2 ? numbers[1] : left_bound;
-                        return Constraint::create_bounded_ptr(constraint_type, left_bound, right_bound);
-                    }
-                    else {
-                        throw std::exception();
-                    }
-                }
-                catch (...) {
-                    throw std::runtime_error("Parser error: '" + key + "' field expected one or two integers");
-                }
+            catch (...) {
+                throw std::runtime_error("Parser error: '" + key + "' field expected one or two integers");
             }
         }
     }

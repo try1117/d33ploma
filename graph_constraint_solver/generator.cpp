@@ -11,8 +11,15 @@
 
 namespace graph_constraint_solver {
 
-    GraphComponentsPtr Generator::generate(ConstraintBlockPtr constraint_list_ptr) {
-        return generate_block(constraint_list_ptr);
+    // TODO: rename
+    GraphComponentsPtr Generator::generate(ConstraintBlockPtr constraint_block_ptr) {
+        auto graph_components = generate_block(constraint_block_ptr);
+        GraphComponentsPtr result = std::make_shared<GraphComponents>();
+        for (auto component : graph_components->components()) {
+            auto cur = replace_with_components(component, constraint_block_ptr->vertices_block(), constraint_block_ptr->edges_block());
+            result->add_component(cur);
+        }
+        return result;
     }
 
 //    std::vector<int> generate_n_numbers(int n, int sum, std::function<bool(std::vector<int>&)> check) {
@@ -330,7 +337,7 @@ namespace graph_constraint_solver {
         long long v = max_vertex_degree;
         long long inf = order_bounds.second;
 
-        // true formula is: (d + 1) + (v - 2) * [ 2 * SUM_{i = 0}^{floor[(d - 1) / 2]}((v - 1) ^ i) + (d % 2 ? 0 : (v - 1) ^ (d / 2) ]
+        // true formula is: (d + 1) + (v - 2) * [ 2 * SUM_{i = 0}^{floor[(d - 1) / 2]}((v - 1) ^ i) + (d % 2 ? 0 : (v - 1) ^ ((d - 2) / 2) ]
         // we stop calculation when value exceeds 'order_bounds.second'
         // 'd' is diameter
         // 'v' is max_vertex_degree
@@ -427,9 +434,9 @@ namespace graph_constraint_solver {
             }
         };
 
-        Graph::OrderType made = diameter;
+//        Graph::OrderType made = diameter;
         for (auto i = diameter + 1; i < order; ++i) {
-            auto v = random.next(made + 1);
+            auto v = random.next(i);
             v = dsu.get_parent(v);
 //            auto seg = dsu.get_segment(v);
 //            // segment can become too big, in this case it will eat more and more
@@ -596,7 +603,6 @@ namespace graph_constraint_solver {
     GraphPtr Generator::generate_two_connected_component(Graph::Type graph_type, Graph::OrderType order,
             Graph::SizeType size, Graph::OrderType min_loop_size, double loop_ear_probability) {
 
-        std::vector<Graph::EdgeType> result;
         if (order < min_loop_size || !Utils::in_range(order, size, Utils::complete_graph_size(order))) {
             return std::make_shared<UndirectedGraph>();
         }
@@ -612,6 +618,7 @@ namespace graph_constraint_solver {
         // maybe we'll use Graph to store the edges ...
         // do not allow parallel edges
         std::unordered_set<Graph::EdgeType, edge_hash> used_edges;
+        std::vector<Graph::EdgeType> result;
 
         auto circuit_rank = size - order + 1;
         auto a1 = circuit_rank == 1 ? order : random.next(min_loop_size, order);
@@ -1035,6 +1042,77 @@ namespace graph_constraint_solver {
                 connect_components_in_vertices_dfs(graph, components, skeleton, selected_vertices, next_free_index,
                         skeleton_edges[i], current_component_index,
                         selected_vertices[current_component_index][next_free_selected_vertex++].second);
+            }
+        }
+    }
+
+    GraphPtr Generator::replace_with_components(GraphPtr graph, ConstraintBlockPtr vertex_block,
+            ConstraintBlockPtr edge_block) {
+
+        if (!vertex_block && !edge_block) return graph;
+        Graph::OrderType order_sum = 0;
+        std::vector<GraphPtr> vertex_components(graph->order());
+        for (size_t i = 0; i < graph->order(); ++i) {
+            auto cur = vertex_block ? generate(vertex_block)->components().at(0) : Graph::create(1, graph->type());
+            vertex_components[i] = cur;
+            order_sum += cur->order();
+        }
+
+        std::vector<std::vector<GraphPtr>> edge_components(graph->order());
+        for (size_t i = 0; i < graph->order(); ++i) {
+            edge_components[i].resize(graph->adjacency_list().at(i).size());
+            for (size_t j = 0; j < graph->adjacency_list().at(i).size(); ++j) {
+                // TODO: check if edge_block is nullptr
+                edge_components[i][j] = generate(edge_block)->components().at(0);
+                order_sum += edge_components[i][j]->order();
+            }
+        }
+
+        GraphPtr result = Graph::create(order_sum, graph->type());
+        std::vector<char> used(graph->order());
+        size_t shift = 0;
+        std::vector<size_t> vertex_components_shift(graph->order());
+
+        for (size_t i = 0; i < graph->order(); ++i) {
+            if (!used[i]) {
+                replace_with_components_impl(result, graph, vertex_components, edge_components,
+                        vertex_components_shift, used, shift, i);
+            }
+        }
+        result->shrink_order(shift);
+        return result;
+    }
+
+    void Generator::replace_with_components_impl(GraphPtr result, GraphPtr skeleton,
+            std::vector<GraphPtr> &vertex_components, std::vector<std::vector<GraphPtr>> &edge_components,
+            std::vector<size_t> &vertex_components_shift,
+            std::vector<char> &used, size_t &shift, size_t skeleton_vertex) {
+
+        used[skeleton_vertex] = true;
+        result->append_graph(vertex_components[skeleton_vertex], shift);
+        vertex_components_shift[skeleton_vertex] = shift;
+        shift += vertex_components[skeleton_vertex]->order();
+
+        auto edges = skeleton->adjacency_list().at(skeleton_vertex);
+        for (size_t i = 0; i < edges.size(); ++i) {
+            size_t child = edges[i];
+            if (!used[child]) {
+                replace_with_components_impl(result, skeleton, vertex_components, edge_components,
+                        vertex_components_shift, used, shift, child);
+            }
+            if (result->type() == Graph::Type::kDirected || result->type() == Graph::Type::kUndirected && skeleton_vertex < child) {
+                auto start_global = vertex_components[skeleton_vertex]->pick_anchor() + vertex_components_shift[skeleton_vertex];
+                auto finish_global = vertex_components[child]->pick_anchor() + vertex_components_shift[child];
+
+                auto edge_local = edge_components[skeleton_vertex][i]->pick_two_anchors();
+                auto start_local = edge_local.first;
+                auto finish_local = edge_local.second;
+
+                std::vector<std::pair<size_t, size_t>> except_vertices;
+                except_vertices.emplace_back(start_local, start_global);
+                except_vertices.emplace_back(finish_local, finish_global);
+                result->append_graph(edge_components[skeleton_vertex][i], shift, except_vertices);
+                shift += edge_components[skeleton_vertex][i]->order() - 2;
             }
         }
     }

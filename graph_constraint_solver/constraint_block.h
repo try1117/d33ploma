@@ -5,6 +5,9 @@
 
 namespace graph_constraint_solver {
 
+    class ConstraintBlock;
+    using ConstraintBlockPtr = std::shared_ptr<ConstraintBlock>;
+
     class ConstraintBlock : public Constraint {
     public:
         enum class ComponentType {
@@ -16,7 +19,7 @@ namespace graph_constraint_solver {
             kRing,
         };
 
-        static std::shared_ptr<ConstraintBlock> create(ComponentType component_type);
+        static ConstraintBlockPtr create(ComponentType component_type);
 
         ConstraintBlock(ComponentType component_type, const std::set<Constraint::Type> &available_constraint_types,
                         const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs);
@@ -25,6 +28,8 @@ namespace graph_constraint_solver {
         ConstraintPtr clone() override;
 
         void bind_graph(GraphPtr graph_ptr) override;
+        ConstraintBlockPtr& vertices_block();
+        ConstraintBlockPtr& edges_block();
 
         std::map<Type, ConstraintPtr> constraints();
         bool has_constraint(Type constraint_type);
@@ -72,26 +77,20 @@ namespace graph_constraint_solver {
             return result;
         }
 
-        // TODO: parse
-        void parse_JSON(std::string filepath) {}
-        void parse_XML(std::string filepath) {}
-
     protected:
         // TODO: maybe we need std::map<Constraint::Type, std::vector<ConstraintPtr>>
         // not sure now whether we'll have multiple constraints of the same type
         std::map<Type, ConstraintPtr> constraints_;
         std::set<Type> important_constraints_;
-
-        ComponentType component_type_;
-
         SatisfactionVerdict check_goals();
 
+        ComponentType component_type_;
         const std::set<Constraint::Type> &available_constraint_types_;
         const std::set<std::pair<Constraint::Type, Constraint::Type>> &restricted_constraint_pairs_;
         static const std::unordered_map<ComponentType, std::string> component_type_to_name_;
-    };
 
-    using ConstraintBlockPtr = std::shared_ptr<ConstraintBlock>;
+        ConstraintBlockPtr vertices_block_, edges_block_;
+    };
 
     class ConnectedConstraintBlock : public ConstraintBlock {
     public:

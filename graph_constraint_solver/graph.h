@@ -44,8 +44,13 @@ namespace graph_constraint_solver {
         void add_edge(EdgeType e);
 
         void add_edges(const std::vector<EdgeType> &edges);
-        void append_graph(GraphPtr other, size_t shift);
+        void append_graph(GraphPtr other, size_t shift,
+                std::vector<std::pair<size_t, size_t>> except_vertices = std::vector<std::pair<size_t, size_t>>());
         void shuffle();
+        void shrink_order(size_t new_order);
+
+        size_t pick_anchor();
+        std::pair<size_t, size_t> pick_two_anchors();
 
     protected:
         Type type_;

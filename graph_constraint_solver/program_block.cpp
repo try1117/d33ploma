@@ -8,6 +8,10 @@ namespace graph_constraint_solver {
 
     }
 
+    ProgramBlock::Type ProgramBlock::type() {
+        return type_;
+    }
+
     InputBlock::InputBlock(Identificator id, Arguments arguments)
         : ProgramBlock(Type::kInput, id), arguments_(arguments) {
 

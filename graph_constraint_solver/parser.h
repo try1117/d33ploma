@@ -47,12 +47,18 @@ namespace graph_constraint_solver {
         GraphPrinter::OutputFormat::Filepath parse_output_filepath(nlohmann::json object);
         std::shared_ptr<OutputBlock> parse_output_block(nlohmann::json object);
 
+        static const std::unordered_map<Parser::String, Constraint::Type> name_to_constraint_type_;
+        static const std::unordered_map<Parser::String, Graph::Type> name_graph_type_;
+
+        ConstraintBlockPtr parse_vertex_reference(nlohmann::json &object, Token token = Token::kCreatorVertexReference);
+        ConstraintBlockPtr parse_edge_reference(nlohmann::json &object);
+        std::vector<ConstraintPtr> parse_constraints(nlohmann::json object);
+        Constraint::Type parse_constraint_type(Parser::String name);
+        Graph::Type parse_graph_type(Parser::String name);
+        ConstraintPtr parse_constraint(Parser::String key, nlohmann::json value);
         std::shared_ptr<CreatorBlock> parse_creator_block(nlohmann::json object);
 
         ProgramBlock::Identificator current_block_id_;
-        std::shared_ptr<InputBlock> input_block_;
-        // ZALEPA:
-        std::shared_ptr<CreatorBlock> creator_block_;
         std::vector<std::shared_ptr<OutputBlock>> output_blocks_;
 
         enum class Token {
@@ -63,24 +69,10 @@ namespace graph_constraint_solver {
             kOutputGraphId,
             kOutputFile,
             kOutputFileStdout,
+            kCreatorVertexReference,
+            kCreatorEdgeReference,
         };
     };
-
-    namespace impl {
-        class CreatorBlockParser {
-        public:
-            CreatorBlockParser(ConstraintBlockPtr constraint_block_ptr, nlohmann::json object);
-
-        private:
-            static const std::unordered_map<Parser::String, Constraint::Type> name_to_constraint_type_;
-            static const std::unordered_map<Parser::String, Graph::Type> name_graph_type_;
-
-            std::vector<ConstraintPtr> parse_constraints(nlohmann::json object);
-            Constraint::Type parse_constraint_type(Parser::String name);
-            Graph::Type parse_graph_type(Parser::String name);
-            ConstraintPtr parse_constraint(Parser::String key, nlohmann::json value);
-        };
-    }
 }
 
 #ifdef GRAPH_CONSTRAINT_SOLVER_SINGLE_HEADER

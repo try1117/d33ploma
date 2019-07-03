@@ -56,14 +56,30 @@ namespace graph_constraint_solver {
         }
     }
 
-    void Graph::append_graph(GraphPtr other, size_t shift) {
+    void Graph::append_graph(GraphPtr other, size_t shift, std::vector<std::pair<size_t, size_t>> except_vertices) {
         if (shift + other->order() > order_) {
             throw std::runtime_error("append_graph error: can't append graph(not enough space)");
         }
+        auto transform_index = [&](size_t index) {
+            for (size_t i = 0; i < except_vertices.size(); ++i) {
+                if (except_vertices[i].first == index) {
+                    return except_vertices[i].second;
+                }
+            }
+            for (auto i = static_cast<Graph::OrderType>(except_vertices.size()) - 1; i >= 0; --i) {
+                if (index > except_vertices[i].first) {
+                    return shift + index - i - 1;
+                }
+            }
+            return shift + index;
+        };
+
         auto adj_list = other->adjacency_list();
-        for (int i = 0; i < other->order(); ++i) {
+        for (size_t i = 0; i < other->order(); ++i) {
+            auto ii = transform_index(i);
             for (auto edge : adj_list[i]) {
-                adjacency_list_[shift + i].emplace_back(shift + edge);
+                auto jj = transform_index(edge);
+                adjacency_list_[ii].emplace_back(jj);
             }
         }
         size_ += other->size();
@@ -80,6 +96,27 @@ namespace graph_constraint_solver {
             }
         }
         adjacency_list_ = new_g;
+    }
+
+    void Graph::shrink_order(size_t new_order) {
+        order_ = new_order;
+        adjacency_list_.resize(new_order);
+    }
+
+    size_t Graph::pick_anchor() {
+        return random.next(order_);
+    }
+
+    std::pair<size_t, size_t> Graph::pick_two_anchors() {
+        // ZALEPA
+        return std::make_pair(0, order_ - 1);
+
+        auto first = pick_anchor();
+        auto second = pick_anchor();
+        while (first == second) {
+            second = pick_anchor();
+        }
+        return std::make_pair(first, second);
     }
 
     // UndirectedGraph

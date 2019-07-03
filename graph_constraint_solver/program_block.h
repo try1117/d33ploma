@@ -22,6 +22,7 @@ namespace graph_constraint_solver {
         using Identificator = std::string;
 
         ProgramBlock(Type type, Identificator id);
+        Type type();
 
         virtual GraphComponentsPtr generate_graph() = 0;
 
